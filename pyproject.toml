@@ -5,6 +5,7 @@ description = "Automation tool for NASAP (Numerical Analysis of Self-Assembly Pr
 authors = ["neji-craftsman <142223934+neji-craftsman@users.noreply.github.com>"]
 readme = "README.md"
 license = "MIT"
+packages = [{include = "nasap"}]
 
 [tool.poetry.dependencies]
 python = "^3.13"
