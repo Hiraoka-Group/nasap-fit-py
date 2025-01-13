@@ -1,2 +1,2 @@
-# NASAP
-Package for NASAP (Numerical Analysis of Self-Assembly Process)
+# AutoNASAP
+Automation tool for NASAP (Numerical Analysis of Self-Assembly Process)
