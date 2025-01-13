@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "autonasap"
-version = "0.1.1"
+version = "0.2.0"
 description = "Automation tool for NASAP (Numerical Analysis of Self-Assembly Process)"
 authors = ["neji-craftsman <142223934+neji-craftsman@users.noreply.github.com>"]
 readme = "README.md"
