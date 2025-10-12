@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nasap-fit-py"
-version = "0.3.1"
+version = "0.3.2"
 description = "Python implementation of the fitting procedure used in NASAP"
 authors = ["Keisuke Takeuchi <142223934+takeuchi-sci@users.noreply.github.com>"]
 readme = "README.md"
