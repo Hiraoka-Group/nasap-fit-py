@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nasap-fit-py"
-version = "0.3.0"
+version = "0.3.1"
 description = "Python implementation of the fitting procedure used in NASAP"
 authors = ["Keisuke Takeuchi <142223934+takeuchi-sci@users.noreply.github.com>"]
 readme = "README.md"
@@ -16,6 +16,7 @@ matplotlib = "^3.9.2"
 pandas = "^2.2.3"
 pandas-stubs = "^2.2.3.241009"
 hypothesis = "^6.122.0"
+pyyaml = "^6.0.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
