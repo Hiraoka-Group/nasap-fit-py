@@ -1,12 +1,61 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 
 import numpy as np
 import numpy.typing as npt
 from scipy.constants import Avogadro
+
+
+@dataclass
+class Reaction:
+    reactant1: str
+    reactant2: str | None
+    product1: str
+    product2: str | None
+    reaction_type: str
+    duplicate_count_f: int
+    duplicate_count_b: int
+
+@dataclass(frozen=True)
+class RateConstant:
+    forward: float
+    backward: float
+
+@dataclass(frozen=True)
+class Reaction_all:
+    reactant1: str
+    reactant2: str | None
+    product1: str
+    product2: str | None
+    reaction_type: str
+    duplicate_count_f: int
+    duplicate_count_b: int
+    rate_constant_f: float
+    rate_constant_b: float
+
+def add_rate_constants_to_reaction_class(
+    reactions: Sequence[Reaction],
+    rate_constants: Mapping[str, RateConstant],
+) -> Sequence[Reaction_all]:
+
+    return [
+        Reaction_all(
+            reactant1=r.reactant1,
+            reactant2=r.reactant2,
+            product1=r.product1,
+            product2=r.product2,
+            reaction_type=r.reaction_type,
+            duplicate_count_f=r.duplicate_count_f,
+            duplicate_count_b=r.duplicate_count_b,
+            rate_constant_f=rate_constants[r.reaction_type].forward,
+            rate_constant_b=rate_constants[r.reaction_type].backward,
+        )
+        for r in reactions
+    ]
+
 
 
 class Status(Enum):
