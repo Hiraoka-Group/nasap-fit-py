@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence, Mapping
+from collections.abc import Sequence, Mapping
 
 
 @dataclass
@@ -36,7 +36,7 @@ class ResolvedReaction:
 
 def resolve_rate_constants(
     reactions: Sequence[Reaction],
-    rate_constants: Mapping[str, RateConstant],
+    reaction_type_to_rate_constant: Mapping[str, RateConstant],
 ) -> Sequence[ResolvedReaction]:
 
     return [
@@ -48,8 +48,8 @@ def resolve_rate_constants(
             reaction_type=r.reaction_type,
             duplicate_count_f=r.duplicate_count_f,
             duplicate_count_b=r.duplicate_count_b,
-            rate_constant_f=rate_constants[r.reaction_type].forward,
-            rate_constant_b=rate_constants[r.reaction_type].backward,
+            rate_constant_f=reaction_type_to_rate_constant[r.reaction_type].forward,
+            rate_constant_b=reaction_type_to_rate_constant[r.reaction_type].backward,
         )
         for r in reactions
     ]
