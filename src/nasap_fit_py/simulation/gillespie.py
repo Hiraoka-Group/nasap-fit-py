@@ -21,6 +21,7 @@ class Status(Enum):
 class GillespieResult:
     t_seq: npt.NDArray
     particle_counts_seq: npt.NDArray[np.int_]
+    reaction_counts: npt.NDArray[np.int_]
     status: Status
 
 
@@ -67,6 +68,11 @@ class Gillespie:
         self.t_seq = [t_init]
         self.particle_counts_seq = [init_particle_counts.copy()]
 
+        self.reaction_counts = np.zeros(
+            len(self.rates_fun(init_particle_counts)), 
+            dtype=np.int_
+            )
+
     @property
     def rates(self) -> npt.NDArray:
         # Each rate represents the average number of reaction occurrences 
@@ -88,7 +94,9 @@ class Gillespie:
                 return GillespieResult(
                     np.array(self.t_seq),
                     np.array(self.particle_counts_seq),
-                    e.status)
+                    self.reaction_counts.copy(),
+                    e.status,
+                )
     
     def _step(self) -> None:
         cur_t = self.t_seq[-1]
@@ -124,6 +132,8 @@ class Gillespie:
         new_particle_counts[new_particle_counts < 0] = 0
 
         self.particle_counts_seq.append(new_particle_counts)
+
+        self.reaction_counts[reaction_index] += 1
 
     # ====================
     # Concentration-based
