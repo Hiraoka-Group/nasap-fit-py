@@ -21,6 +21,7 @@ class Status(Enum):
 class GillespieResult:
     t_seq: npt.NDArray
     particle_counts_seq: npt.NDArray[np.int_]
+    reaction_counts: npt.NDArray[np.int_]
     status: Status
 
 
@@ -50,9 +51,10 @@ class Gillespie:
             raise ValueError('Either t_max or max_iter must be specified.')
         
         self.rates_fun = rates_fun
+        reaction_len = len(self.rates_fun(init_particle_counts))
         self.particle_changes = np.array(particle_changes)
         if self.particle_changes.shape != (
-                len(self.rates_fun(init_particle_counts)),
+                reaction_len,
                 len(init_particle_counts)):
             raise ValueError(
                 'Invalid shape of particle_changes. '
@@ -66,6 +68,11 @@ class Gillespie:
 
         self.t_seq = [t_init]
         self.particle_counts_seq = [init_particle_counts.copy()]
+
+        self.reaction_counts = np.zeros(
+            reaction_len,
+            dtype=np.int_
+            )
 
     @property
     def rates(self) -> npt.NDArray:
@@ -88,7 +95,9 @@ class Gillespie:
                 return GillespieResult(
                     np.array(self.t_seq),
                     np.array(self.particle_counts_seq),
-                    e.status)
+                    self.reaction_counts.copy(),
+                    e.status,
+                )
     
     def _step(self) -> None:
         cur_t = self.t_seq[-1]
@@ -124,6 +133,8 @@ class Gillespie:
         new_particle_counts[new_particle_counts < 0] = 0
 
         self.particle_counts_seq.append(new_particle_counts)
+
+        self.reaction_counts[reaction_index] += 1
 
     # ====================
     # Concentration-based
