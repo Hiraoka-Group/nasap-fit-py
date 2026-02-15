@@ -51,9 +51,10 @@ class Gillespie:
             raise ValueError('Either t_max or max_iter must be specified.')
         
         self.rates_fun = rates_fun
+        reaction_len = len(self.rates_fun(init_particle_counts))
         self.particle_changes = np.array(particle_changes)
         if self.particle_changes.shape != (
-                len(self.rates_fun(init_particle_counts)),
+                reaction_len,
                 len(init_particle_counts)):
             raise ValueError(
                 'Invalid shape of particle_changes. '
@@ -69,7 +70,7 @@ class Gillespie:
         self.particle_counts_seq = [init_particle_counts.copy()]
 
         self.reaction_counts = np.zeros(
-            len(self.rates_fun(init_particle_counts)), 
+            reaction_len,
             dtype=np.int_
             )
 
