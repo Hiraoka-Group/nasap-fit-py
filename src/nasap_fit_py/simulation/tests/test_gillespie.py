@@ -118,6 +118,96 @@ def test_status_of_t_max_reached():
     assert result.status == Status.REACHED_T_MAX
 
 
+def test_reaction_counts_sum_equals_time_steps():
+    """Test that sum of all reaction counts equals time steps."""
+    # A <-> B
+    init_particle_counts = np.array([100, 100])
+    k1 = 0.8
+    k2 = 0.2
+    
+    def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
+        return np.array([k1 * x[0], k2 * x[1]])
+    
+    particle_changes = [
+        np.array([-1, 1]),  # Reaction 1: A -> B
+        np.array([1, -1])   # Reaction 2: B -> A
+    ]
+    
+    gillespie = Gillespie(
+        init_particle_counts, rates_fun, particle_changes, 
+        max_iter=100)
+    
+    result = gillespie.solve()
+
+    # reaction_counts should have an entry for each reaction type
+    assert len(result.reaction_counts) == 2
+    # Each reaction count should be non-negative
+    assert result.reaction_counts[0] >= 0
+    assert result.reaction_counts[1] >= 0
+    # Sum of all reaction counts must equal number of steps taken
+    assert np.sum(result.reaction_counts) == len(result.t_seq) - 1
+
+
+def test_reaction_rate_affects_count_distribution():
+    """Test that reaction counts reflect the relative rates of reactions."""
+    # A <-> B with significantly different rates
+    init_particle_counts = np.array([100, 100])
+    k1 = 0.8  # Forward reaction rate (A -> B)
+    k2 = 0.2  # Reverse reaction rate (B -> A)
+    
+    def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
+        return np.array([k1 * x[0], k2 * x[1]])
+    
+    particle_changes = [
+        np.array([-1, 1]),  # Reaction 1: A -> B
+        np.array([1, -1])   # Reaction 2: B -> A
+    ]
+    
+    gillespie = Gillespie(
+        init_particle_counts, rates_fun, particle_changes, 
+        max_iter=100, seed=42)  # Use seed for reproducibility
+    
+    result = gillespie.solve()
+    
+    # Since k1 > k2, reaction 1 should occur more often
+    # (statistically, given sufficient sampling)
+    assert result.reaction_counts[0] >= result.reaction_counts[1], \
+        "Higher-rate reaction should occur more frequently"
+
+
+def test_perform_reaction_increments_and_accumulates():
+    """Test that perform_reaction increments counter and accumulates on consecutive calls for multiple reactions."""
+    # A <-> B
+    init_particle_counts = np.array([5, 5])
+
+    def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
+        return np.array([1.0, 1.0])
+
+    particle_changes = [
+        np.array([-1, 1]),  # Reaction 0: A -> B
+        np.array([1, -1])   # Reaction 1: B -> A
+    ]
+    gillespie = Gillespie(
+        init_particle_counts, rates_fun, particle_changes,
+        max_iter=10)
+
+    # Initial state: both counters should be 0
+    np.testing.assert_array_equal(gillespie.reaction_counts, [0, 0])
+
+    # Perform reaction 0: only its counter should increase
+    gillespie.perform_reaction(0)
+    np.testing.assert_array_equal(gillespie.reaction_counts, [1, 0])
+
+    # Perform reaction 1: only its counter should increase
+    gillespie.perform_reaction(1)
+    np.testing.assert_array_equal(gillespie.reaction_counts, [1, 1])
+
+    # Perform reaction 0 twice more
+    gillespie.perform_reaction(0)
+    gillespie.perform_reaction(0)
+    np.testing.assert_array_equal(gillespie.reaction_counts, [3, 1])
+
+
 def test_concentrations():
     # A <-> B
     init_particle_counts = np.array([100, 200])
