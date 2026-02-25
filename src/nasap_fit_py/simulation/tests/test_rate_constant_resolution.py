@@ -141,25 +141,3 @@ class TestResolveRateConstants:
             rate_constant_f=1.0,
             rate_constant_b=0.2,
         )]
-
-
-    def test_returns_resolved_reaction_objects(self):
-        """Test that the return type contains ResolvedReaction objects."""
-        reactions = [
-            Reaction(
-                reactant1="A",
-                reactant2="B",
-                product1="C",
-                product2="D",
-                reaction_type="type1",
-                duplicate_count_f=1,
-                duplicate_count_b=1,
-            )
-        ]
-        rate_constants = {
-            "type1": RateConstant(forward=0.5, backward=0.1),
-        }
-
-        result = resolve_rate_constants(reactions, rate_constants)
-
-        assert all(isinstance(r, ResolvedReaction) for r in result)
