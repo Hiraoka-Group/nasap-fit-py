@@ -1,7 +1,10 @@
+import numpy as np
+import numpy.typing as npt
 import pytest
 
 from nasap_fit_py.simulation.rate_constant_resolution import (
-    RateConstant, Reaction, ResolvedReaction, resolve_rate_constants)
+    RateConstant, Reaction, ResolvedReaction, create_conc_rates_fun,
+    resolve_rate_constants)
 
 
 class TestResolveRateConstants:
@@ -141,3 +144,70 @@ class TestResolveRateConstants:
             rate_constant_f=1.0,
             rate_constant_b=0.2,
         )]
+
+
+class TestCreateConcRatesFun:
+    """Tests for the create_conc_rates_fun function."""
+
+    def test_bimolecular_reaction(self):
+        """Test creating conc_rates_fun for a bimolecular reversible reaction: A + B <-> C + D."""
+        resolved_reactions = [
+            ResolvedReaction(
+                reactant1="A",
+                reactant2="B",
+                product1="C",
+                product2="D",
+                rate_constant_f=0.5,
+                rate_constant_b=0.1,
+            )
+        ]
+        species_ids = ["A", "B", "C", "D"]
+        
+        conc_rates_fun = create_conc_rates_fun(resolved_reactions, species_ids)
+        
+        # Test with specific concentrations: [A]=2.0, [B]=3.0, [C]=1.0, [D]=4.0
+        concentrations = np.array([2.0, 3.0, 1.0, 4.0])
+        rates = conc_rates_fun(concentrations)
+        
+        # Expected: [forward_rate, backward_rate]
+        # forward: k_f * [A] * [B] = 0.5 * 2.0 * 3.0 = 3.0
+        # backward: k_b * [C] * [D] = 0.1 * 1.0 * 4.0 = 0.4
+        expected_rates = np.array([3.0, 0.4])
+        np.testing.assert_allclose(rates, expected_rates)
+
+
+    def test_multiple_reactions(self):
+        """Test creating conc_rates_fun for multiple reversible reactions."""
+        resolved_reactions = [
+            ResolvedReaction(
+                reactant1="A",
+                reactant2="B",
+                product1="C",
+                product2="D",
+                rate_constant_f=0.5,
+                rate_constant_b=0.1,
+            ),
+            ResolvedReaction(
+                reactant1="B",
+                reactant2="C",
+                product1="D",
+                product2="E",
+                rate_constant_f=1.0,
+                rate_constant_b=0.2,
+            ),
+        ]
+        species_ids = ["A", "B", "C", "D", "E"]
+        
+        conc_rates_fun = create_conc_rates_fun(resolved_reactions, species_ids)
+        
+        # Test with specific concentrations
+        concentrations = np.array([2.0, 3.0, 1.0, 4.0, 5.0])
+        rates = conc_rates_fun(concentrations)
+        
+        # Expected: 4 elements (2 reactions × 2 directions each)
+        # Reaction 0 forward: 0.5 * 2.0 * 3.0 = 3.0
+        # Reaction 0 backward: 0.1 * 1.0 * 4.0 = 0.4
+        # Reaction 1 forward: 1.0 * 3.0 * 1.0 = 3.0
+        # Reaction 1 backward: 0.2 * 4.0 * 5.0 = 4.0
+        expected_rates = np.array([3.0, 0.4, 3.0, 4.0])
+        np.testing.assert_allclose(rates, expected_rates)
