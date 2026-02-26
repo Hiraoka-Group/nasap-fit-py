@@ -149,6 +149,33 @@ class TestResolveRateConstants:
 class TestCreateConcRatesFun:
     """Tests for the create_conc_rates_fun function."""
 
+    def test_unimolecular_reaction(self):
+        """Test creating conc_rates_fun for a unimolecular reversible reaction: A <-> B."""
+        resolved_reactions = [
+            ResolvedReaction(
+                reactant1="A",
+                reactant2=None,
+                product1="B",
+                product2=None,
+                rate_constant_f=0.5,
+                rate_constant_b=0.1,
+            )
+        ]
+        species_ids = ["A", "B"]
+        
+        conc_rates_fun = create_conc_rates_fun(resolved_reactions, species_ids)
+        
+        # Test with specific concentrations: [A]=2.0, [B]=3.0
+        concentrations = np.array([2.0, 3.0])
+        rates = conc_rates_fun(concentrations)
+        
+        # Expected: [forward_rate, backward_rate]
+        # forward: k_f * [A] = 0.5 * 2.0 = 1.0
+        # backward: k_b * [B] = 0.1 * 3.0 = 0.3
+        expected_rates = np.array([1.0, 0.3])
+        np.testing.assert_allclose(rates, expected_rates)
+        
+
     def test_bimolecular_reaction(self):
         """Test creating conc_rates_fun for a bimolecular reversible reaction: A + B <-> C + D."""
         resolved_reactions = [

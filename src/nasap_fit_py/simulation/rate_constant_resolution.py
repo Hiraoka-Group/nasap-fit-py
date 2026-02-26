@@ -45,8 +45,8 @@ def resolve_rate_constants(
             reactant2=r.reactant2,
             product1=r.product1,
             product2=r.product2,
-            rate_constant_f=reaction_type_to_rate_constant[r.reaction_type].forward*r.duplicate_count_f,
-            rate_constant_b=reaction_type_to_rate_constant[r.reaction_type].backward*r.duplicate_count_b,
+            rate_constant_f=reaction_type_to_rate_constant[r.reaction_type].forward * r.duplicate_count_f,
+            rate_constant_b=reaction_type_to_rate_constant[r.reaction_type].backward * r.duplicate_count_b,
         )
         for r in reactions
     ]
@@ -82,21 +82,21 @@ def create_conc_rates_fun(
         Returns:
             Array of reaction rates [mol·L^-1·min^-1] with 2n elements for n reactions.
         """
-        rates = []
+        rates = np.empty(2 * len(resolved_reactions))
         
-        for reaction in resolved_reactions:
+        for i, reaction in enumerate(resolved_reactions):
             # Forward reaction (reactants -> products)
             rate_f = reaction.rate_constant_f * concentrations[species_to_index[reaction.reactant1]]
             if reaction.reactant2 is not None:
                 rate_f *= concentrations[species_to_index[reaction.reactant2]]
-            rates.append(rate_f)
+            rates[2 * i] = rate_f
             
             # Backward reaction (products -> reactants)
             rate_b = reaction.rate_constant_b * concentrations[species_to_index[reaction.product1]]
             if reaction.product2 is not None:
                 rate_b *= concentrations[species_to_index[reaction.product2]]
-            rates.append(rate_b)
+            rates[2 * i + 1] = rate_b
         
-        return np.array(rates)
+        return rates
     
     return conc_rates_fun
