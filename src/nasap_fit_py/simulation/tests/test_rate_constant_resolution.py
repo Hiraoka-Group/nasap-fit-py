@@ -9,7 +9,6 @@ class TestResolveRateConstants:
 
     def test_single_reaction_basic(self):
         # A + B <-> C + D, with forward rate constant 0.5 and backward rate constant 0.1
-        """Test resolving a single reaction with basic parameters."""
         reactions = [
             Reaction(
                 reactant1="A",
@@ -39,7 +38,6 @@ class TestResolveRateConstants:
 
     def test_single_reaction_with_none_values(self):
         # A <-> B, with forward rate constant 1.0 and backward rate constant 0.5
-        """Test resolving a reaction with None for unimolecular reactions."""
         reactions = [
             Reaction(
                 reactant1="A",
@@ -68,7 +66,6 @@ class TestResolveRateConstants:
 
     def test_duplicate_count_affects_rate_constants(self):
         # A + B <-> C + D, with forward rate constant 0.5 and backward rate constant 0.1, and duplicate counts of 3 and 2
-        """Test that duplicate counts multiply the rate constants."""
         reactions = [
             Reaction(
                 reactant1="A",
@@ -98,7 +95,6 @@ class TestResolveRateConstants:
     def test_multiple_reactions_different_types(self):
         # A + B <-> C + D (type1), with forward rate constant 0.5 and backward rate constant 0.1
         # B + C <-> D + E (type2), with forward rate constant 1.0 and backward rate constant 0.2
-        """Test resolving multiple reactions with different types."""
         reactions = [
             Reaction(
                 reactant1="A",
@@ -141,3 +137,7 @@ class TestResolveRateConstants:
             rate_constant_f=1.0,
             rate_constant_b=0.2,
         )]
+
+
+if __name__ == '__main__':
+    pytest.main(['-v', __file__])
