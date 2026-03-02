@@ -59,8 +59,8 @@ def resolve_rate_constants(
                 reactant2=r.reactant2,
                 product1=r.product1,
                 product2=r.product2,
-                rate_constant_f=rtype_to_rate_constant[r.reaction_type].forward*r.duplicate_count_f,
-                rate_constant_b=rtype_to_rate_constant[r.reaction_type].backward*r.duplicate_count_b,
+                rate_constant_f=rtype_to_rate_constant[r.reaction_type].forward * r.duplicate_count_f,
+                rate_constant_b=rtype_to_rate_constant[r.reaction_type].backward * r.duplicate_count_b,
         )
     return resolved_reactions
 
