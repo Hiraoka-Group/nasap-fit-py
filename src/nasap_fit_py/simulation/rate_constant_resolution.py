@@ -65,9 +65,8 @@ def resolve_rate_constants(
     return resolved_reactions
 
 
-
 def create_conc_rates_fun(
-    resolved_reactions: Sequence[ResolvedReaction],
+    resolved_reactions: Mapping[str, ResolvedReaction],
     species_ids: Sequence[str],
 ) -> Callable[[npt.NDArray], npt.NDArray]:
     """Create a function that calculates reaction rates from concentrations.
@@ -76,7 +75,7 @@ def create_conc_rates_fun(
     vector containing forward and backward rates for each reaction.
     
     Args:
-        resolved_reactions: List of resolved reactions with rate constants.
+        resolved_reactions: dict of rid and resolved reactions with rate constants.
         species_ids: List of species IDs corresponding to concentration array indices.
     
     Returns:
@@ -98,7 +97,7 @@ def create_conc_rates_fun(
         """
         rates = np.empty(2 * len(resolved_reactions))
         
-        for i, reaction in enumerate(resolved_reactions):
+        for i, (_, reaction) in enumerate(resolved_reactions.items()):
             # Forward reaction (reactants -> products)
             rate_f = reaction.rate_constant_f * concentrations[species_to_index[reaction.reactant1]]
             if reaction.reactant2 is not None:
