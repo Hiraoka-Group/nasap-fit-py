@@ -35,12 +35,30 @@ class ResolvedReaction:
 
 
 def resolve_rate_constants(
-    reactions: Mapping[str, Reaction],
+    reactions: Sequence[Reaction],
     rtype_to_rate_constant: Mapping[str, RateConstant],
-) -> Mapping[str, ResolvedReaction]:
-
-    resolved_reactions = {}
-    for rid, r in reactions.items():
+) -> Sequence[ResolvedReaction]:
+    """Apply rate constants to reactions, accounting for duplicate pathways.
+    
+    Parameters
+    ----------
+    reactions : Sequence[Reaction]
+        Sequence of reactions to resolve.
+    rtype_to_rate_constant : Mapping[str, RateConstant]
+        Mapping from reaction type to rate constants.
+    
+    Returns
+    -------
+    Sequence[ResolvedReaction]
+        Sequence of reactions with rate constants applied and duplicates multiplied in.
+    
+    Raises
+    ------
+    ValueError
+        If a reaction type is not found in rtype_to_rate_constant.
+    """
+    resolved_reactions = []
+    for r in reactions:
         if r.reaction_type not in rtype_to_rate_constant:
             reaction_desc = f"{r.reactant1}"
             if r.reactant2:
@@ -51,53 +69,49 @@ def resolve_rate_constants(
                 reaction_desc += f" + {r.product2}"
             raise ValueError(
                 f"Reaction type '{r.reaction_type}' is not defined in rate_constants. "
-                "This is the corresponding reaction. "
-                f"Reaction[{rid}]: {reaction_desc}. "
+                f"This is the corresponding reaction: {reaction_desc}. "
             )
-        resolved_reactions[rid] = ResolvedReaction(
+        resolved_reactions.append(ResolvedReaction(
                 reactant1=r.reactant1,
                 reactant2=r.reactant2,
                 product1=r.product1,
                 product2=r.product2,
                 rate_constant_f=rtype_to_rate_constant[r.reaction_type].forward * r.duplicate_count_f,
                 rate_constant_b=rtype_to_rate_constant[r.reaction_type].backward * r.duplicate_count_b,
-        )
+        ))
     return resolved_reactions
 
 
 def create_conc_rates_fun(
-    resolved_reactions: Mapping[str, ResolvedReaction],
+    resolved_reactions: Sequence[ResolvedReaction],
     species_ids: Sequence[str],
 ) -> Callable[[npt.NDArray], npt.NDArray]:
-    """Create a function that calculates reaction rates from concentrations.
+    """Create a function that calculates reaction rates from species concentrations.
     
-    For n reactions (each reversible), returns a function that produces a 2n-element
-    vector containing forward and backward rates for each reaction.
+    Returns a closure that computes forward and backward rates for all reactions
+    based on current concentrations. For n reactions, the function produces a 2n-element
+    vector where even indices contain forward rates and odd indices contain backward rates.
     
-    Args:
-        resolved_reactions: dict of rid and resolved reactions with rate constants.
-        species_ids: List of species IDs corresponding to concentration array indices.
+    Parameters
+    ----------
+    resolved_reactions : Sequence[ResolvedReaction]
+        Sequence of resolved reactions with rate constants.
+    species_ids : Sequence[str]
+        Species IDs in order corresponding to concentration array indices.
     
-    Returns:
-        A function that takes a concentration array and returns a reaction rate vector,
-        where rates[2*i] is the forward rate and rates[2*i+1] is the backward rate
-        for reaction i.
+    Returns
+    -------
+    Callable[[npt.NDArray], npt.NDArray]
+        Callable that takes a concentration array and returns reaction rates.
+        Output is a float64 array of shape (2*n,) where n is the number of reactions.
     """
     # Create mapping from species ID to index
     species_to_index = {species_id: i for i, species_id in enumerate(species_ids)}
     
     def conc_rates_fun(concentrations: npt.NDArray) -> npt.NDArray:
-        """Calculate reaction rates from concentrations.
-        
-        Args:
-            concentrations: Array of species concentrations [mol/L].
-        
-        Returns:
-            Array of reaction rates [mol·L^-1·min^-1] with 2n elements for n reactions.
-        """
         rates = np.empty(2 * len(resolved_reactions))
         
-        for i, (_, reaction) in enumerate(resolved_reactions.items()):
+        for i, reaction in enumerate(resolved_reactions):
             # Forward reaction (reactants -> products)
             rate_f = reaction.rate_constant_f * concentrations[species_to_index[reaction.reactant1]]
             if reaction.reactant2 is not None:
