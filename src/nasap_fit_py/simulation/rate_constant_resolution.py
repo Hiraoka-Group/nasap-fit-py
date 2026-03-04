@@ -109,6 +109,19 @@ def create_conc_rates_fun(
     species_to_index = {species_id: i for i, species_id in enumerate(species_ids)}
     
     def conc_rates_fun(concentrations: npt.NDArray) -> npt.NDArray:
+        """Calculate reaction rates from species concentrations.
+        
+        Parameters
+        ----------
+        concentrations : npt.NDArray
+            Concentration array with species in order corresponding to species_ids.
+        
+        Returns
+        -------
+        npt.NDArray
+            Float64 array of shape (2*n,) where n is the number of reactions.
+            Even indices contain forward rates, odd indices contain backward rates.
+        """
         rates = np.empty(2 * len(resolved_reactions))
         
         for i, reaction in enumerate(resolved_reactions):
