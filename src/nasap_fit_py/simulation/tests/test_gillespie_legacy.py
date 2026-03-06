@@ -336,4 +336,3 @@ def test_with_example_reaction_by_plotting():
 if __name__ == '__main__':
     pytest.main(['-vv', __file__])
     pytest.main(['-vv', __file__ + '::test_with_example_reaction_by_plotting', '-m', 'visual'])
-    pytest.main(['-vv', __file__ + '::test_with_example_reaction_by_plotting', '-m', 'visual'])
