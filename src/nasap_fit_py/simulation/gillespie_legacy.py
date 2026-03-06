@@ -18,21 +18,21 @@ class Status(Enum):
 
 
 @dataclass
-class GillespieResult:
+class GillespieLegacyResult:
     t_seq: npt.NDArray
     particle_counts_seq: npt.NDArray[np.int_]
     reaction_counts: npt.NDArray[np.int_]
     status: Status
 
 
-class AbortGillespieError(Exception):
+class AbortGillespieLegacyError(Exception):
     def __init__(self, status: Status) -> None:
         self.status = status
 
 
-class Gillespie:
+class GillespieLegacy:
     """Class for simulating stochastic chemical kinetics 
-    using the Gillespie algorithm.
+    using the GillespieLegacy algorithm.
     """
     def __init__(
             self,
@@ -87,12 +87,12 @@ class Gillespie:
     def total_rate(self) -> float:
         return sum(self.rates)
     
-    def solve(self) -> GillespieResult:
+    def solve(self) -> GillespieLegacyResult:
         while True:
             try:
                 self._step()
-            except AbortGillespieError as e:
-                return GillespieResult(
+            except AbortGillespieLegacyError as e:
+                return GillespieLegacyResult(
                     np.array(self.t_seq),
                     np.array(self.particle_counts_seq),
                     self.reaction_counts.copy(),
@@ -104,15 +104,15 @@ class Gillespie:
 
         if (self.max_iter is not None 
                 and len(self.t_seq) - 1 >= self.max_iter):
-            raise AbortGillespieError(Status.REACHED_MAX_ITER)
+            raise AbortGillespieLegacyError(Status.REACHED_MAX_ITER)
 
         if self.total_rate == 0:
-            raise AbortGillespieError(Status.TOTAL_RATE_ZERO)
+            raise AbortGillespieLegacyError(Status.TOTAL_RATE_ZERO)
         reaction_index = self.determine_reaction()
         time_step = self.determine_time_step()
 
         if self.t_max is not None and cur_t + time_step > self.t_max:
-            raise AbortGillespieError(Status.REACHED_T_MAX)
+            raise AbortGillespieLegacyError(Status.REACHED_T_MAX)
         
         self.perform_reaction(reaction_index)
         self.t_seq.append(cur_t + time_step)
@@ -179,7 +179,7 @@ class Gillespie:
             t_max: float | None = None,
             seed: int | None = None,
             max_iter: int | None = 1_000_000
-            ) -> Gillespie:
+            ) -> GillespieLegacy:
         init_particle_counts = init_concentrations * Avogadro * volume
 
         def particle_rates_fun(

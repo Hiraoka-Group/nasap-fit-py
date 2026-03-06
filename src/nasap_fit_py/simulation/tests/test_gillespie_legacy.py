@@ -3,8 +3,9 @@ import numpy.typing as npt
 import pytest
 from scipy.constants import Avogadro
 
-from src.nasap_fit_py.simulation import Gillespie
-from src.nasap_fit_py.simulation.gillespie import GillespieResult, Status
+from src.nasap_fit_py.simulation import GillespieLegacy
+from src.nasap_fit_py.simulation.gillespie_legacy import (
+    GillespieLegacyResult, Status)
 
 
 def test_init():
@@ -13,7 +14,7 @@ def test_init():
     def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
         return np.array([0.1, 0.2])
     particle_changes = [np.array([-1, 1]), np.array([1, -1])]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         t_max=10.0)
 
@@ -33,13 +34,13 @@ def test_solve():
     def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
         return np.array([0.1, 0.2])
     particle_changes = [np.array([-1, 1]), np.array([1, -1])]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         t_max=10.0)
 
     result = gillespie.solve()
 
-    assert isinstance(result, GillespieResult)
+    assert isinstance(result, GillespieLegacyResult)
     assert result.status in {
         Status.REACHED_T_MAX, Status.REACHED_MAX_ITER, 
         Status.TOTAL_RATE_ZERO}
@@ -54,7 +55,7 @@ def test_step_count():
     def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
         return np.array([0.1, 0.2])
     particle_changes = [np.array([-1, 1]), np.array([1, -1])]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         max_iter=1)
     
@@ -69,7 +70,7 @@ def test_status_of_max_iter_reached():
     def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
         return np.array([0.1, 0.2])
     particle_changes = [np.array([-1, 1]), np.array([1, -1])]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         max_iter=1)
     
@@ -87,7 +88,7 @@ def test_status_of_total_rate_zero():
     def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
         return np.array([0.1 * x[0]])
     particle_changes = [np.array([-1, 1])]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         max_iter=100)
     
@@ -105,7 +106,7 @@ def test_status_of_t_max_reached():
     def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
         return np.array([0.1 * x[0], 0.2 * x[1]])
     particle_changes = [np.array([-1, 1]), np.array([1, -1])]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         t_max=0.1)
     
@@ -133,7 +134,7 @@ def test_reaction_counts_sum_equals_time_steps():
         np.array([1, -1])   # Reaction 2: B -> A
     ]
     
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         max_iter=100)
     
@@ -163,7 +164,7 @@ def test_reaction_rate_affects_count_distribution():
         np.array([1, -1])   # Reaction 2: B -> A
     ]
     
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         max_iter=100, seed=42)  # Use seed for reproducibility
     
@@ -187,7 +188,7 @@ def test_perform_reaction_increments_and_accumulates():
         np.array([-1, 1]),  # Reaction 0: A -> B
         np.array([1, -1])   # Reaction 1: B -> A
     ]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes,
         max_iter=10)
 
@@ -215,7 +216,7 @@ def test_concentrations():
         return np.array([0.1, 0.2])
     particle_changes = [np.array([-1, 1]), np.array([1, -1])]
     volume = 1.0
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         volume=volume, t_max=10.0)
 
@@ -232,7 +233,7 @@ def test_gillespie_init_based_on_concentrations():
         return np.array([0.1, 0.2])
     particle_changes = [np.array([-1, 1]), np.array([1, -1])]
     volume = 1.0
-    gillespie = Gillespie.init_based_on_concentrations(
+    gillespie = GillespieLegacy.init_based_on_concentrations(
         init_concentrations, conc_rates_fun, particle_changes, volume, 
         t_max=10.0)
 
@@ -260,7 +261,7 @@ def test_with_example_reaction():
     def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
         return np.array([k * x[0]])
     particle_changes = [np.array([-1, 1, 2])]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         max_iter=10000)
     
@@ -299,7 +300,7 @@ def test_with_example_reaction_by_plotting():
     def rates_fun(x: npt.NDArray[np.int_]) -> npt.NDArray:
         return np.array([k * x[0]])
     particle_changes = [np.array([-1, 1, 2])]
-    gillespie = Gillespie(
+    gillespie = GillespieLegacy(
         init_particle_counts, rates_fun, particle_changes, 
         max_iter=10000)
     
@@ -334,4 +335,5 @@ def test_with_example_reaction_by_plotting():
 
 if __name__ == '__main__':
     pytest.main(['-vv', __file__])
+    pytest.main(['-vv', __file__ + '::test_with_example_reaction_by_plotting', '-m', 'visual'])
     pytest.main(['-vv', __file__ + '::test_with_example_reaction_by_plotting', '-m', 'visual'])
