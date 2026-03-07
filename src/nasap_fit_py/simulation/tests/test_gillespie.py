@@ -1,11 +1,6 @@
 import numpy as np
-import numpy.typing as npt
-import pytest
-from scipy.constants import Avogadro
 
-from src.nasap_fit_py.simulation import GillespieLegacy
-from src.nasap_fit_py.simulation.gillespie import (AbortGillespieError,
-                                                   Gillespie, GillespieResult,
+from src.nasap_fit_py.simulation.gillespie import (Gillespie, GillespieResult,
                                                    Status)
 from src.nasap_fit_py.simulation.rate_constant_resolution import \
     ResolvedReaction
