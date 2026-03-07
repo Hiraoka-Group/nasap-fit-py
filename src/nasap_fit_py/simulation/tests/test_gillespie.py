@@ -18,6 +18,7 @@ def test_init():
         resolved_reactions,
         species_ids,
         init_particle_counts,
+        volume,
         t_max=10.0
     )
 
@@ -28,6 +29,7 @@ def test_init():
     assert len(gillespie.reaction_counts) == 2
     np.testing.assert_array_equal(
         gillespie.reaction_counts, [0, 0])
+    assert gillespie.volume == 1.0
     assert gillespie.t_max == 10.0
     assert gillespie.max_iter == 1_000_000
     assert gillespie.t_seq[0] == 0.0
