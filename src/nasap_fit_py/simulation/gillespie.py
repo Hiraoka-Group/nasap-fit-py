@@ -45,13 +45,28 @@ class Gillespie:
 
         self.rates_fun = create_conc_rates_fun(resolved_reactions, species_ids)
         
+        # Create particle changes for each reaction (forward and backward)
         self.particle_changes = []
+        species_to_index = {sp_id: i for i, sp_id in enumerate(species_ids)}
+        
         for r in resolved_reactions:
-            r_change = -2 if r.reactant1 == r.reactant2 else -1
-            p_change = 2 if r.product1 == r.product2 else 1
-            self.particle_changes.extend([
-                np.array([r_change, p_change]), np.array([p_change, r_change])
-                ])
+            # Forward reaction: reactants -> products
+            forward_change = np.zeros(len(species_ids), dtype=np.int_)
+            
+            # Decrease reactants
+            forward_change[species_to_index[r.reactant1]] -= 1
+            if r.reactant2 is not None:
+                forward_change[species_to_index[r.reactant2]] -= 1
+            
+            # Increase products
+            forward_change[species_to_index[r.product1]] += 1
+            if r.product2 is not None:
+                forward_change[species_to_index[r.product2]] += 1
+            
+            # Backward reaction: products -> reactants
+            backward_change = -forward_change
+            
+            self.particle_changes.extend([forward_change, backward_change])
         
         self.volume = volume
         self.t_max = t_max

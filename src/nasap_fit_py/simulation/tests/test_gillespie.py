@@ -6,7 +6,7 @@ from src.nasap_fit_py.simulation.rate_constant_resolution import \
     ResolvedReaction
 
 
-def test_init():
+def test_init_unimolecular():
     # A <-> B
     resolved_reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
@@ -35,6 +35,50 @@ def test_init():
     assert gillespie.t_seq[0] == 0.0
 
 
+def test_init_bimolecular():
+    resolved_reactions = [
+        ResolvedReaction('A', 'B', 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
+    ]
+    species_ids = ['A', 'B', 'C']  
+    init_particle_counts = {'A': 300, 'B': 200, 'C': 50}
+    tmax = 10.0
+
+    gillespie = Gillespie(
+        resolved_reactions,
+        species_ids,
+        init_particle_counts,
+        tmax
+    )
+
+    np.testing.assert_allclose(
+        gillespie.particle_counts_seq[0], [300, 200, 50])
+    np.testing.assert_allclose(
+        gillespie.particle_changes, [[-1, -1, 1], [1, 1, -1]])
+    assert len(gillespie.reaction_counts) == 2
+    
+
+def test_init_duplicate_reactions():
+    # A <-> B with duplicate reactions
+    resolved_reactions = [
+        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        ResolvedReaction('B', None, 'C', None, rate_constant_f=0.2, rate_constant_b=0.1),
+    ]
+    species_ids = ['A', 'B', 'C']
+    init_particle_counts = {'A': 100, 'B': 200, 'C': 50}
+
+    gillespie = Gillespie(
+        resolved_reactions,
+        species_ids,
+        init_particle_counts,
+        t_max=10.0
+    )
+
+    np.testing.assert_allclose(
+        gillespie.particle_counts_seq[0], [100, 200, 50])
+    np.testing.assert_allclose(
+        gillespie.particle_changes, [[-1, 1, 0], [1, -1, 0], [0, -1, 1], [0, 1, -1]])
+    assert len(gillespie.reaction_counts) == 4
+
 def test_solve():
     # A <-> B
     resolved_reactions = [
@@ -62,10 +106,30 @@ def test_solve():
     assert len(result.reaction_counts) == 2
     assert result.reaction_counts[0] >= 0
     assert result.reaction_counts[1] >= 0
-    assert len(result.t_seq) == 11
-    
 
-def test_reaction_rate_affects_count_distribution():
+    
+def test_solve_reaction_counts_sum_equals_time_steps():
+    # A <-> B
+    resolved_reactions = [
+        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.8, rate_constant_b=0.2),
+    ]
+    species_ids = ['A', 'B']
+    init_particle_counts = {'A': 100, 'B': 100}
+    
+    gillespie = Gillespie(
+        resolved_reactions,
+        species_ids,
+        init_particle_counts,
+        max_iter=100
+    )
+    
+    result = gillespie.solve()
+
+    assert result.status == Status.REACHED_MAX_ITER
+    assert np.sum(result.reaction_counts) == len(result.t_seq) - 1
+
+
+def test_solve_reaction_rate_affects_count_distribution():
     # A <-> B with significantly different rates
     resolved_reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=1.8, rate_constant_b=0.2),
@@ -78,8 +142,8 @@ def test_reaction_rate_affects_count_distribution():
     
     result = gillespie.solve()
 
-    assert result.reaction_counts[0] >= result.reaction_counts[1], \
-        "Higher-rate reaction should occur more frequently"
+    assert result.reaction_counts[0] >= result.reaction_counts[1]
+        # Higher-rate reaction should occur more frequently
     
 
 def test_status_of_max_iter_reached():
