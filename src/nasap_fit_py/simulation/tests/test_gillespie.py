@@ -58,7 +58,6 @@ def test_init_bimolecular():
     
 
 def test_init_duplicate_reactions():
-    # A <-> B with duplicate reactions
     resolved_reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
         ResolvedReaction('B', None, 'C', None, rate_constant_f=0.2, rate_constant_b=0.1),
