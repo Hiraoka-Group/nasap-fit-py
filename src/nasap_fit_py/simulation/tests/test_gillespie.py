@@ -89,13 +89,18 @@ def test_init_raises_when_reaction_species_not_in_species_ids():
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
 
-    with pytest.raises(ValueError, match='not in species_ids: C'):
+    with pytest.raises(ValueError) as exc_info:
         Gillespie(
             resolved_reactions,
             species_ids,
             init_particle_counts,
             t_max=10.0,
         )
+
+    assert str(exc_info.value) == (
+        'resolved_reactions contains species that are not in species_ids: C'
+    )
+
 
 def test_solve():
     # A <-> B

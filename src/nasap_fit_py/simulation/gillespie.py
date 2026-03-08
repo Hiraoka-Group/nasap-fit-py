@@ -40,6 +40,7 @@ class Gillespie:
             ) -> None:
         if t_max is None and max_iter is None:
             raise ValueError('Either t_max or max_iter must be specified.')
+        self._validate_reaction_species_ids(resolved_reactions, species_ids)
 
         self.resolved_reactions = resolved_reactions
         self.species_ids = species_ids
@@ -84,9 +85,7 @@ class Gillespie:
 
         self.reaction_counts = np.zeros(len(self.rates_fun(init_counts_array)), dtype=np.int_)
 
-        self._validate_reaction_species_ids(resolved_reactions, species_ids)
 
-        
     @staticmethod
     def _validate_reaction_species_ids(
         resolved_reactions: Sequence[ResolvedReaction],
@@ -109,8 +108,7 @@ class Gillespie:
         if missing_species_ids:
             missing_list = ', '.join(sorted(missing_species_ids))
             raise ValueError(
-                'resolved_reactions contains species that are not in species_ids: '
-                f'{missing_list}'
+                f'resolved_reactions contains species that are not in species_ids: {missing_list}'
             )
 
     @property
