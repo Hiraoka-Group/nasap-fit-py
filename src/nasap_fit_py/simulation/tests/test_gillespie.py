@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from src.nasap_fit_py.simulation.gillespie import (Gillespie, GillespieResult,
                                                    Status)
@@ -13,12 +14,11 @@ def test_init_unimolecular():
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
-    volume = 1.0
     gillespie = Gillespie(
         resolved_reactions,
         species_ids,
         init_particle_counts,
-        volume,
+        volume=1.0,
         t_max=10.0
     )
 
@@ -47,7 +47,7 @@ def test_init_bimolecular():
         resolved_reactions,
         species_ids,
         init_particle_counts,
-        tmax
+        t_max=tmax
     )
 
     np.testing.assert_allclose(
@@ -80,6 +80,22 @@ def test_init_duplicate_reactions():
     np.testing.assert_allclose(
         gillespie.particle_changes, [[-1, 1, 0], [1, -1, 0], [0, -1, 1], [0, 1, -1]])
     assert len(gillespie.reaction_counts) == 4
+
+
+def test_init_raises_when_reaction_species_not_in_species_ids():
+    resolved_reactions = [
+        ResolvedReaction('A', None, 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
+    ]
+    species_ids = ['A', 'B']
+    init_particle_counts = {'A': 100, 'B': 200}
+
+    with pytest.raises(ValueError, match='not in species_ids: C'):
+        Gillespie(
+            resolved_reactions,
+            species_ids,
+            init_particle_counts,
+            t_max=10.0,
+        )
 
 def test_solve():
     # A <-> B
