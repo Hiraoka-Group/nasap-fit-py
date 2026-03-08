@@ -58,6 +58,8 @@ def test_init_bimolecular():
     
 
 def test_init_duplicate_reactions():
+    # r1: A <-> B
+    # r2: B <-> C
     resolved_reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
         ResolvedReaction('B', None, 'C', None, rate_constant_f=0.2, rate_constant_b=0.1),
@@ -74,6 +76,7 @@ def test_init_duplicate_reactions():
 
     np.testing.assert_allclose(
         gillespie.particle_counts_seq[0], [100, 200, 50])
+    # particle_changes:[r1_f, r1_b, r2_f, r2_b]
     np.testing.assert_allclose(
         gillespie.particle_changes, [[-1, 1, 0], [1, -1, 0], [0, -1, 1], [0, 1, -1]])
     assert len(gillespie.reaction_counts) == 4
