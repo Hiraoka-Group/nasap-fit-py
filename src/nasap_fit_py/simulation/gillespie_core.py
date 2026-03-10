@@ -5,7 +5,7 @@ from enum import Enum, auto
 import numpy as np
 import numpy.typing as npt
 
-from .rate_constant_resolution import ResolvedReaction, create_conc_rates_fun
+from .rate_constant_resolution import ResolvedReaction, create_rates_fun
 
 
 class Status(Enum):
@@ -48,7 +48,7 @@ class GillespieCore:
         self.reactions = reactions
         self.species_ids = species_ids
 
-        self.rates_fun = create_conc_rates_fun(reactions, species_ids)
+        self.rates_fun = create_rates_fun(reactions, species_ids)
         
         self.particle_changes = self._create_particle_changes(reactions, species_ids)
         

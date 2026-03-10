@@ -82,7 +82,7 @@ def resolve_rate_constants(
     return resolved_reactions
 
 
-def create_conc_rates_fun(
+def create_rates_fun(
     resolved_reactions: Sequence[ResolvedReaction],
     species_ids: Sequence[str],
 ) -> Callable[[npt.NDArray], npt.NDArray]:
@@ -108,7 +108,7 @@ def create_conc_rates_fun(
     # Create mapping from species ID to index
     species_to_index = {species_id: i for i, species_id in enumerate(species_ids)}
     
-    def conc_rates_fun(concentrations: npt.NDArray) -> npt.NDArray:
+    def rates_fun(concentrations: npt.NDArray) -> npt.NDArray:
         """Calculate reaction rates from species concentrations.
         
         Parameters
@@ -139,5 +139,5 @@ def create_conc_rates_fun(
         
         return rates
     
-    return conc_rates_fun
+    return rates_fun
     

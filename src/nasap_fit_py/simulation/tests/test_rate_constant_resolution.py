@@ -3,7 +3,7 @@ import numpy.typing as npt
 import pytest
 
 from nasap_fit_py.simulation.rate_constant_resolution import (
-    RateConstant, Reaction, ResolvedReaction, create_conc_rates_fun,
+    RateConstant, Reaction, ResolvedReaction, create_rates_fun,
     resolve_rate_constants)
 
 
@@ -246,7 +246,7 @@ def test_unimolecular_reaction():
     ]
     species_ids = ["A", "B"]
     
-    conc_rates_fun = create_conc_rates_fun(resolved_reactions, species_ids)
+    conc_rates_fun = create_rates_fun(resolved_reactions, species_ids)
     
     # Test with specific concentrations: [A]=2.0, [B]=3.0
     concentrations = np.array([2.0, 3.0])
@@ -273,7 +273,7 @@ def test_bimolecular_reaction():
     ]
     species_ids = ["A", "B", "C", "D"]
     
-    conc_rates_fun = create_conc_rates_fun(resolved_reactions, species_ids)
+    conc_rates_fun = create_rates_fun(resolved_reactions, species_ids)
     
     # Test with specific concentrations: [A]=2.0, [B]=3.0, [C]=1.0, [D]=4.0
     concentrations = np.array([2.0, 3.0, 1.0, 4.0])
@@ -308,7 +308,7 @@ def test_multiple_reactions():
     ]
     species_ids = ["A", "B", "C", "D", "E"]
     
-    conc_rates_fun = create_conc_rates_fun(resolved_reactions, species_ids)
+    conc_rates_fun = create_rates_fun(resolved_reactions, species_ids)
     
     # Test with specific concentrations
     concentrations = np.array([2.0, 3.0, 1.0, 4.0, 5.0])
