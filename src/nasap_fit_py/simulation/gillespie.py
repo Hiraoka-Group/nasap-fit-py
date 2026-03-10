@@ -15,6 +15,7 @@ class Status(Enum):
     REACHED_MAX_ITER = auto()
     TOTAL_RATE_ZERO = auto()
 
+
 @dataclass
 class GillespieResult:
     t_seq: npt.NDArray
@@ -22,14 +23,16 @@ class GillespieResult:
     reaction_counts: npt.NDArray[np.int_]
     status: Status 
 
+
 class AbortGillespieError(Exception):
     def __init__(self, status: Status) -> None:
         self.status = status
 
+
 class Gillespie:
     def __init__(
             self,
-            resolved_reactions: Sequence[ResolvedReaction],
+            reactions: Sequence[ResolvedReaction],
             species_ids: Sequence[str],
             init_particle_counts: Mapping[str, int],
             *,
@@ -40,17 +43,17 @@ class Gillespie:
             ) -> None:
         if t_max is None and max_iter is None:
             raise ValueError('Either t_max or max_iter must be specified.')
-        self._validate_reaction_species_ids(resolved_reactions, species_ids)
+        self._validate_reaction_species_ids(reactions, species_ids)
 
-        self.resolved_reactions = resolved_reactions
+        self.reactions = reactions
         self.species_ids = species_ids
 
-        self.rates_fun = create_conc_rates_fun(resolved_reactions, species_ids)
+        self.rates_fun = create_conc_rates_fun(reactions, species_ids)
         
         # Create particle changes for each reaction (forward and backward)
         self.particle_changes = []
         species_to_index = {sp_id: i for i, sp_id in enumerate(species_ids)}
-        for r in resolved_reactions:
+        for r in reactions:
             # Forward reaction: reactants -> products
             forward_change = np.zeros(len(species_ids), dtype=np.int_)
             
@@ -85,16 +88,15 @@ class Gillespie:
 
         self.reaction_counts = np.zeros(len(self.rates_fun(init_counts_array)), dtype=np.int_)
 
-
     @staticmethod
     def _validate_reaction_species_ids(
-        resolved_reactions: Sequence[ResolvedReaction],
+        reactions: Sequence[ResolvedReaction],
         species_ids: Sequence[str],
     ) -> None:
         species_id_set = set(species_ids)
         missing_species_ids: set[str] = set()
 
-        for reaction in resolved_reactions:
+        for reaction in reactions:
             reaction_species_ids = (
                 reaction.reactant1,
                 reaction.reactant2,
@@ -119,7 +121,7 @@ class Gillespie:
         # [min^-1]
         cur_particle_counts = self.particle_counts_seq[-1]
         return np.array(self.rates_fun(cur_particle_counts))
-    
+ 
     @property
     def total_rate(self) -> float:
         return sum(self.rates)
