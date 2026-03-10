@@ -50,9 +50,33 @@ class Gillespie:
 
         self.rates_fun = create_conc_rates_fun(reactions, species_ids)
         
-        # Create particle changes for each reaction (forward and backward)
-        self.particle_changes = []
+        self.particle_changes = self._create_particle_changes(reactions, species_ids)
+        
+        self.volume = volume
+        self.t_max = t_max
+        self.max_iter = max_iter
+
+        self.rng = np.random.default_rng(seed)
+
+        self.t_seq = [0.0]
+
+        init_counts_array = np.array(
+            [init_particle_counts.get(sp_id, 0) for sp_id in species_ids],
+            dtype=np.int_
+        )
+        self.particle_counts_seq = [init_counts_array]
+
+        self.reaction_counts = np.zeros(2*len(reactions), dtype=np.int_)
+
+    @staticmethod
+    def _create_particle_changes(
+        reactions: Sequence[ResolvedReaction],
+        species_ids: Sequence[str],
+    ) -> list[npt.NDArray[np.int_]]:
+        """Create particle changes for each reaction (forward and backward)."""
+        particle_changes = []
         species_to_index = {sp_id: i for i, sp_id in enumerate(species_ids)}
+        
         for r in reactions:
             # Forward reaction: reactants -> products
             forward_change = np.zeros(len(species_ids), dtype=np.int_)
@@ -70,23 +94,9 @@ class Gillespie:
             # Backward reaction: products -> reactants
             backward_change = -forward_change
             
-            self.particle_changes.extend([forward_change, backward_change])
+            particle_changes.extend([forward_change, backward_change])
         
-        self.volume = volume
-        self.t_max = t_max
-        self.max_iter = max_iter
-
-        self.rng = np.random.default_rng(seed)
-
-        self.t_seq = [0.0]
-
-        init_counts_array = np.array(
-            [init_particle_counts.get(sp_id, 0) for sp_id in species_ids],
-            dtype=np.int_
-        )
-        self.particle_counts_seq = [init_counts_array]
-
-        self.reaction_counts = np.zeros(len(self.rates_fun(init_counts_array)), dtype=np.int_)
+        return particle_changes
 
     @staticmethod
     def _validate_reaction_species_ids(
@@ -110,7 +120,7 @@ class Gillespie:
         if missing_species_ids:
             missing_list = ', '.join(sorted(missing_species_ids))
             raise ValueError(
-                f'resolved_reactions contains species that are not in species_ids: {missing_list}'
+                f'reactions contains species that are not in species_ids: {missing_list}'
             )
 
     @property

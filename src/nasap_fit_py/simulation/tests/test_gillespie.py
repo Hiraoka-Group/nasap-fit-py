@@ -9,13 +9,13 @@ from src.nasap_fit_py.simulation.rate_constant_resolution import \
 
 def test_init_unimolecular():
     # A <-> B
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
     gillespie = Gillespie(
-        resolved_reactions,
+        reactions,
         species_ids,
         init_particle_counts,
         volume=1.0,
@@ -36,7 +36,7 @@ def test_init_unimolecular():
 
 
 def test_init_bimolecular():
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', 'B', 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B', 'C']  
@@ -44,7 +44,7 @@ def test_init_bimolecular():
     tmax = 10.0
 
     gillespie = Gillespie(
-        resolved_reactions,
+        reactions,
         species_ids,
         init_particle_counts,
         t_max=tmax
@@ -60,7 +60,7 @@ def test_init_bimolecular():
 def test_init_duplicate_reactions():
     # r1: A <-> B
     # r2: B <-> C
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
         ResolvedReaction('B', None, 'C', None, rate_constant_f=0.2, rate_constant_b=0.1),
     ]
@@ -68,7 +68,7 @@ def test_init_duplicate_reactions():
     init_particle_counts = {'A': 100, 'B': 200, 'C': 50}
 
     gillespie = Gillespie(
-        resolved_reactions,
+        reactions,
         species_ids,
         init_particle_counts,
         t_max=10.0
@@ -83,7 +83,7 @@ def test_init_duplicate_reactions():
 
 
 def test_init_raises_when_reaction_species_not_in_species_ids():
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
@@ -91,26 +91,26 @@ def test_init_raises_when_reaction_species_not_in_species_ids():
 
     with pytest.raises(ValueError) as exc_info:
         Gillespie(
-            resolved_reactions,
+            reactions,
             species_ids,
             init_particle_counts,
             t_max=10.0,
         )
 
     assert str(exc_info.value) == (
-        'resolved_reactions contains species that are not in species_ids: C'
+        'reactions contains species that are not in species_ids: C'
     )
 
 
 def test_solve():
     # A <-> B
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
     gillespie = Gillespie(
-        resolved_reactions,
+        reactions,
         species_ids,
         init_particle_counts,
         t_max=10.0,
@@ -133,14 +133,14 @@ def test_solve():
     
 def test_solve_reaction_counts_sum_equals_time_steps():
     # A <-> B
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.8, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 100}
     
     gillespie = Gillespie(
-        resolved_reactions,
+        reactions,
         species_ids,
         init_particle_counts,
         max_iter=100
@@ -154,13 +154,13 @@ def test_solve_reaction_counts_sum_equals_time_steps():
 
 def test_solve_reaction_rate_affects_count_distribution():
     # A <-> B with significantly different rates
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=1.8, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 300, 'B': 50}
     gillespie = Gillespie(
-        resolved_reactions, species_ids, init_particle_counts, t_max=10.0,
+        reactions, species_ids, init_particle_counts, t_max=10.0,
         max_iter=100, seed=42) 
     
     result = gillespie.solve()
@@ -171,13 +171,13 @@ def test_solve_reaction_rate_affects_count_distribution():
 
 def test_status_of_max_iter_reached():
     # A <-> B
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
     gillespie = Gillespie(
-        resolved_reactions,
+        reactions,
         species_ids,
         init_particle_counts,
         t_max=10.0,
@@ -194,13 +194,13 @@ def test_status_of_total_rate_zero():
 
     # Few particles, so the total rate becomes zero
     # before the max iteration is reached.
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.0),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 10, 'B': 0}
     gillespie = Gillespie(
-        resolved_reactions,
+        reactions,
         species_ids,
         init_particle_counts,
         t_max=100.0,
@@ -217,13 +217,13 @@ def test_status_of_total_rate_zero():
 
 def test_status_of_t_max_reached():
     # A <-> B
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
     gillespie = Gillespie(
-        resolved_reactions,
+        reactions,
         species_ids,
         init_particle_counts,
         t_max=0.1,
@@ -241,14 +241,14 @@ def test_status_of_t_max_reached():
 
 def test_perform_reaction_increments_and_accumulates():
     # A <-> B
-    resolved_reactions = [
+    reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 5, 'B': 5}
 
     gillespie = Gillespie(
-        resolved_reactions, species_ids, init_particle_counts,
+        reactions, species_ids, init_particle_counts,
         t_max=10.0, max_iter=10)
 
     # Initial state: both counters should be 0
