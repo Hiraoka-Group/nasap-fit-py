@@ -17,19 +17,19 @@ class Status(Enum):
 
 
 @dataclass
-class GillespieResult:
+class GillespieCoreResult:
     t_seq: npt.NDArray
     particle_counts_seq: npt.NDArray[np.int_]
     reaction_counts: npt.NDArray[np.int_]
     status: Status 
 
 
-class AbortGillespieError(Exception):
+class AbortGillespieCoreError(Exception):
     def __init__(self, status: Status) -> None:
         self.status = status
 
 
-class Gillespie:
+class GillespieCore:
     def __init__(
             self,
             reactions: Sequence[ResolvedReaction],
@@ -72,7 +72,7 @@ class Gillespie:
     def _create_particle_changes(
         reactions: Sequence[ResolvedReaction],
         species_ids: Sequence[str],
-    ) -> list[npt.NDArray[np.int_]]:
+    ) -> Sequence[npt.NDArray[np.int_]]:
         """Create particle changes for each reaction (forward and backward)."""
         particle_changes = []
         species_to_index = {sp_id: i for i, sp_id in enumerate(species_ids)}
@@ -136,12 +136,12 @@ class Gillespie:
     def total_rate(self) -> float:
         return sum(self.rates)
     
-    def solve(self) -> GillespieResult:
+    def solve(self) -> GillespieCoreResult:
         while True:
             try:
                 self._step()
-            except AbortGillespieError as e:
-                return GillespieResult(
+            except AbortGillespieCoreError as e:
+                return GillespieCoreResult(
                     np.array(self.t_seq),
                     np.array(self.particle_counts_seq),
                     self.reaction_counts.copy(),
@@ -153,18 +153,18 @@ class Gillespie:
 
         if (self.max_iter is not None 
                 and len(self.t_seq) - 1 >= self.max_iter):
-            raise AbortGillespieError(Status.REACHED_MAX_ITER)
+            raise AbortGillespieCoreError(Status.REACHED_MAX_ITER)
 
         rates = self.rates
         total_rate = self.total_rate
         
         if total_rate == 0:
-            raise AbortGillespieError(Status.TOTAL_RATE_ZERO)
+            raise AbortGillespieCoreError(Status.TOTAL_RATE_ZERO)
         reaction_index = self.determine_reaction(rates, total_rate)
         time_step = self.determine_time_step(total_rate)
 
         if self.t_max is not None and cur_t + time_step > self.t_max:
-            raise AbortGillespieError(Status.REACHED_T_MAX)
+            raise AbortGillespieCoreError(Status.REACHED_T_MAX)
         
         self.perform_reaction(reaction_index)
         self.t_seq.append(cur_t + time_step)

@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
 
-from src.nasap_fit_py.simulation.gillespie import (Gillespie, GillespieResult,
-                                                   Status)
+from src.nasap_fit_py.simulation.gillespie_core import (GillespieCore,
+                                                        GillespieCoreResult,
+                                                        Status)
 from src.nasap_fit_py.simulation.rate_constant_resolution import \
     ResolvedReaction
 
@@ -14,7 +15,7 @@ def test_init_unimolecular():
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
@@ -23,16 +24,16 @@ def test_init_unimolecular():
     )
 
     np.testing.assert_allclose(
-        gillespie.particle_counts_seq[0], [100, 200])
+        gillespie_core.particle_counts_seq[0], [100, 200])
     np.testing.assert_allclose(
-        gillespie.particle_changes, [[-1, 1], [1, -1]])
-    assert len(gillespie.reaction_counts) == 2
+        gillespie_core.particle_changes, [[-1, 1], [1, -1]])
+    assert len(gillespie_core.reaction_counts) == 2
     np.testing.assert_array_equal(
-        gillespie.reaction_counts, [0, 0])
-    assert gillespie.volume == 1.0
-    assert gillespie.t_max == 10.0
-    assert gillespie.max_iter == 1_000_000
-    assert gillespie.t_seq[0] == 0.0
+        gillespie_core.reaction_counts, [0, 0])
+    assert gillespie_core.volume == 1.0
+    assert gillespie_core.t_max == 10.0
+    assert gillespie_core.max_iter == 1_000_000
+    assert gillespie_core.t_seq[0] == 0.0
 
 
 def test_init_bimolecular():
@@ -43,7 +44,7 @@ def test_init_bimolecular():
     init_particle_counts = {'A': 300, 'B': 200, 'C': 50}
     tmax = 10.0
 
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
@@ -51,10 +52,10 @@ def test_init_bimolecular():
     )
 
     np.testing.assert_allclose(
-        gillespie.particle_counts_seq[0], [300, 200, 50])
+        gillespie_core.particle_counts_seq[0], [300, 200, 50])
     np.testing.assert_allclose(
-        gillespie.particle_changes, [[-1, -1, 1], [1, 1, -1]])
-    assert len(gillespie.reaction_counts) == 2
+        gillespie_core.particle_changes, [[-1, -1, 1], [1, 1, -1]])
+    assert len(gillespie_core.reaction_counts) == 2
     
 
 def test_init_duplicate_reactions():
@@ -67,7 +68,7 @@ def test_init_duplicate_reactions():
     species_ids = ['A', 'B', 'C']
     init_particle_counts = {'A': 100, 'B': 200, 'C': 50}
 
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
@@ -75,11 +76,11 @@ def test_init_duplicate_reactions():
     )
 
     np.testing.assert_allclose(
-        gillespie.particle_counts_seq[0], [100, 200, 50])
+        gillespie_core.particle_counts_seq[0], [100, 200, 50])
     # particle_changes:[r1_f, r1_b, r2_f, r2_b]
     np.testing.assert_allclose(
-        gillespie.particle_changes, [[-1, 1, 0], [1, -1, 0], [0, -1, 1], [0, 1, -1]])
-    assert len(gillespie.reaction_counts) == 4
+        gillespie_core.particle_changes, [[-1, 1, 0], [1, -1, 0], [0, -1, 1], [0, 1, -1]])
+    assert len(gillespie_core.reaction_counts) == 4
 
 
 def test_init_raises_when_reaction_species_not_in_species_ids():
@@ -90,7 +91,7 @@ def test_init_raises_when_reaction_species_not_in_species_ids():
     init_particle_counts = {'A': 100, 'B': 200}
 
     with pytest.raises(ValueError) as exc_info:
-        Gillespie(
+        GillespieCore(
             reactions,
             species_ids,
             init_particle_counts,
@@ -109,7 +110,7 @@ def test_solve():
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
@@ -117,9 +118,9 @@ def test_solve():
         max_iter=10
     )
 
-    result = gillespie.solve()
+    result = gillespie_core.solve()
 
-    assert isinstance(result, GillespieResult)
+    assert isinstance(result, GillespieCoreResult)
     assert result.status in {
         Status.REACHED_T_MAX, Status.REACHED_MAX_ITER, 
         Status.TOTAL_RATE_ZERO}
@@ -139,14 +140,14 @@ def test_solve_reaction_counts_sum_equals_time_steps():
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 100}
     
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
         max_iter=100
     )
     
-    result = gillespie.solve()
+    result = gillespie_core.solve()
 
     assert result.status == Status.REACHED_MAX_ITER
     assert np.sum(result.reaction_counts) == len(result.t_seq) - 1
@@ -159,11 +160,11 @@ def test_solve_reaction_rate_affects_count_distribution():
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 300, 'B': 50}
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions, species_ids, init_particle_counts, t_max=10.0,
         max_iter=100, seed=42) 
     
-    result = gillespie.solve()
+    result = gillespie_core.solve()
 
     assert result.reaction_counts[0] >= result.reaction_counts[1]
         # Higher-rate reaction should occur more frequently
@@ -176,7 +177,7 @@ def test_status_of_max_iter_reached():
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
@@ -184,7 +185,7 @@ def test_status_of_max_iter_reached():
         max_iter=1
     )
 
-    result = gillespie.solve()
+    result = gillespie_core.solve()
     
     assert result.status == Status.REACHED_MAX_ITER
 
@@ -199,7 +200,7 @@ def test_status_of_total_rate_zero():
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 10, 'B': 0}
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
@@ -210,7 +211,7 @@ def test_status_of_total_rate_zero():
     # A becomes zero only in 10 steps,
     # which makes the total rate zero.
     
-    result = gillespie.solve()
+    result = gillespie_core.solve()
 
     assert result.status == Status.TOTAL_RATE_ZERO
 
@@ -222,7 +223,7 @@ def test_status_of_t_max_reached():
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
@@ -234,7 +235,7 @@ def test_status_of_t_max_reached():
     # the number of A and B will never become zero.
     # Therefore, the simulation will stop when t_max is reached.
     
-    result = gillespie.solve()
+    result = gillespie_core.solve()
 
     assert result.status == Status.REACHED_T_MAX
 
@@ -247,22 +248,24 @@ def test_perform_reaction_increments_and_accumulates():
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 5, 'B': 5}
 
-    gillespie = Gillespie(
+    gillespie_core = GillespieCore(
         reactions, species_ids, init_particle_counts,
         t_max=10.0, max_iter=10)
 
     # Initial state: both counters should be 0
-    np.testing.assert_array_equal(gillespie.reaction_counts, [0, 0])
+    np.testing.assert_array_equal(gillespie_core.reaction_counts, [0, 0])
 
     # Perform forward reaction: only its counter should increase
-    gillespie.perform_reaction(0)
-    np.testing.assert_array_equal(gillespie.reaction_counts, [1, 0])
+    gillespie_core.perform_reaction(0)
+    np.testing.assert_array_equal(gillespie_core.reaction_counts, [1, 0])
 
     # Perform reverse reaction: only its counter should increase
-    gillespie.perform_reaction(1)
-    np.testing.assert_array_equal(gillespie.reaction_counts, [1, 1])
+    gillespie_core.perform_reaction(1)
+    np.testing.assert_array_equal(gillespie_core.reaction_counts, [1, 1])
 
     # Perform reaction 0 twice more
-    gillespie.perform_reaction(0)
-    gillespie.perform_reaction(0)
-    np.testing.assert_array_equal(gillespie.reaction_counts, [3, 1])
+    gillespie_core.perform_reaction(0)
+    gillespie_core.perform_reaction(0)
+    np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
+    np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
+    np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
