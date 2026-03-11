@@ -85,13 +85,13 @@ class GillespieCore:
 
         self.rng = np.random.default_rng(seed)
 
-        self.t_seq = [0.0]
+        self.t_seq = np.array([0.0], dtype=np.float64)
 
         init_counts_array = np.array(
             [init_particle_counts.get(sp_id, 0) for sp_id in species_ids],
             dtype=np.int_
         )
-        self.particle_counts_seq = [init_counts_array]
+        self.particle_counts_seq = init_counts_array.reshape(1, -1)
 
         self.reaction_counts = np.zeros(2*len(reactions), dtype=np.int_)
 
@@ -99,7 +99,7 @@ class GillespieCore:
     def _create_particle_changes(
         reactions: Sequence[ResolvedReaction],
         species_ids: Sequence[str],
-    ) -> Sequence[npt.NDArray[np.int_]]:
+    ) -> npt.NDArray[np.int_]:
         """Create particle-count deltas for each forward and backward reaction.
 
         Each returned array has the same length and ordering as species_ids.
@@ -117,9 +117,11 @@ class GillespieCore:
 
         Returns
         -------
-        Sequence[npt.NDArray[np.int_]]
-            Sequence of integer arrays. For each reaction, the forward change
-            is followed by the corresponding backward change.
+        npt.NDArray[np.int_]
+            Two-dimensional integer array with shape
+            (2 * len(reactions), len(species_ids)). For each reaction,
+            the forward change row is followed by the corresponding
+            backward change row.
         """
         particle_changes = []
         species_to_index = {sp_id: i for i, sp_id in enumerate(species_ids)}
@@ -143,7 +145,7 @@ class GillespieCore:
             
             particle_changes.extend([forward_change, backward_change])
         
-        return particle_changes
+        return np.array(particle_changes, dtype=np.int_)
 
     @staticmethod
     def _validate_reaction_species_ids(
@@ -223,8 +225,8 @@ class GillespieCore:
                 self._step()
             except AbortGillespieCoreError as e:
                 return GillespieCoreResult(
-                    np.array(self.t_seq),
-                    np.array(self.particle_counts_seq),
+                    self.t_seq.copy(),
+                    self.particle_counts_seq.copy(),
                     self.reaction_counts.copy(),
                     e.status,
                 )
@@ -264,7 +266,7 @@ class GillespieCore:
             raise AbortGillespieCoreError(Status.REACHED_T_MAX)
         
         self.perform_reaction(reaction_index)
-        self.t_seq.append(cur_t + time_step)
+        self.t_seq = np.append(self.t_seq, cur_t + time_step)
 
     def determine_reaction(self, rates: npt.NDArray, total_rate: float) -> int:
         """Sample the index of the next reaction from the current rates.
@@ -323,6 +325,7 @@ class GillespieCore:
         # Replace negative particle counts with 0
         new_particle_counts[new_particle_counts < 0] = 0
 
-        self.particle_counts_seq.append(new_particle_counts)
+        self.particle_counts_seq = np.vstack(
+            (self.particle_counts_seq, new_particle_counts))
 
         self.reaction_counts[reaction_index] += 1
