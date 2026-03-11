@@ -104,7 +104,7 @@ class GillespieCore:
 
         Each returned array has the same length and ordering as species_ids.
         A negative value means particles are consumed, while a positive value
-        means particles are produced. Given a sistem of n reversible reactions, 
+        means particles are produced. Given a system of n reversible reactions, 
         the returned sequence has length 2n, where the forward change 
         for each reaction is immediately followed by the corresponding backward change.
 
@@ -179,12 +179,16 @@ class GillespieCore:
 
     @property
     def rates(self) -> npt.NDArray:
-        """Return reaction rates for the current particle counts.
+        """Return reaction rates computed from the current particle counts.
+
+        Rates are re-evaluated on every access using the latest state,
+        self.particle_counts_seq[-1].
 
         Returns
         -------
         npt.NDArray
-            One-dimensional array of nonnegative rates for all event channels.
+            One-dimensional array of nonnegative rates for all event channels
+            at the current simulation state.
             For each reaction, the forward rate appears first and the backward rate 
             appears immediately after it. If you use, for example, minute as the time unit, 
             the rates should be in [min^-1].
