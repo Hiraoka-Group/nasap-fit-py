@@ -30,6 +30,38 @@ class AbortGillespieCoreError(Exception):
 
 
 class GillespieCore:
+    """Simulate a reaction network with the GillespieCore algorithm.
+
+    Parameters
+    ----------
+    reactions : Sequence[ResolvedReaction]
+        Reactions with rate constants. Each reaction contributes two event channels: 
+        the forward direction and the backward direction.
+    species_ids : Sequence[str]
+        Species IDs defining the order of particle-count vectors.
+    init_particle_counts : Mapping[str, int]
+        Initial particle count for some species. Species not listed here will be 
+        initialized with 0 particles.
+        Units are particle counts, not molar amounts and not concentration.
+    volume : float | None, optional
+        Reserved for future use. The current implementation stores the value but
+        does not directly apply any volume-dependent scaling inside this class.
+    t_max : float | None, optional
+        Simulation will terminate when the next reaction time step would exceed this value.
+        Units are arbitrary but must be consistent with the rate constants.
+        t_min, the initial time, is fixed at 0.0.
+    max_iter : int | None, optional
+        Simulation will terminate when this number of events has been executed.
+    seed : int | None, optional
+        Seed for the random number generator used for reaction and waiting-time
+        sampling.
+
+    Raises
+    ------
+    ValueError
+        If both t_max and max_iter are None, or if reactions reference species IDs 
+        not present in species_ids.
+    """
     def __init__(
             self,
             reactions: Sequence[ResolvedReaction],
@@ -73,7 +105,27 @@ class GillespieCore:
         reactions: Sequence[ResolvedReaction],
         species_ids: Sequence[str],
     ) -> Sequence[npt.NDArray[np.int_]]:
-        """Create particle changes for each reaction (forward and backward)."""
+        """Create particle-count deltas for each forward and backward reaction.
+
+        Each returned array has the same length and ordering as species_ids.
+        A negative value means particles are consumed, while a positive value
+        means particles are produced. Given a sistem of n reversible reactions, 
+        the returned sequence has length 2n, where the forward change 
+        for each reaction is immediately followed by the corresponding backward change.
+
+        Parameters
+        ----------
+        reactions : Sequence[ResolvedReaction]
+            Reactions to convert into particle-count deltas.
+        species_ids : Sequence[str]
+            Species IDs defining the order of the returned arrays.
+
+        Returns
+        -------
+        Sequence[npt.NDArray[np.int_]]
+            Sequence of integer arrays. For each reaction, the forward change
+            is followed by the corresponding backward change.
+        """
         particle_changes = []
         species_to_index = {sp_id: i for i, sp_id in enumerate(species_ids)}
         
@@ -103,6 +155,13 @@ class GillespieCore:
         reactions: Sequence[ResolvedReaction],
         species_ids: Sequence[str],
     ) -> None:
+        """Validate that all species used in reactions are listed in species_ids.
+
+        Raises
+        ------
+        ValueError
+            If any reactant or product species ID found in reactions is missing from species_ids.
+        """
         species_id_set = set(species_ids)
         missing_species_ids: set[str] = set()
 
@@ -125,18 +184,41 @@ class GillespieCore:
 
     @property
     def rates(self) -> npt.NDArray:
-        # Each rate represents the average number of reaction occurrences 
-        # per minute in the entire volume.
+        """Return reaction rates for the current particle counts.
 
-        # [min^-1]
+        Returns
+        -------
+        npt.NDArray
+            One-dimensional array of nonnegative rates for all event channels.
+            For each reaction, the forward rate appears first and the backward rate 
+            appears immediately after it. If you use, for example, minute as the time unit, 
+            the rates should be in [min^-1].
+        """
         cur_particle_counts = self.particle_counts_seq[-1]
         return np.array(self.rates_fun(cur_particle_counts))
  
     @property
     def total_rate(self) -> float:
+        """Return the sum of all current reaction rates.
+
+        The total rate is the intensity parameter of the exponential waiting
+        time distribution used by the Gillespie algorithm.
+        """
+
         return sum(self.rates)
     
     def solve(self) -> GillespieCoreResult:
+        """Run the simulation until a termination condition is reached.
+
+        The method repeatedly advances the system by one stochastic event and
+        stops only when _step signals a terminal status.
+
+        Returns
+        -------
+        GillespieCoreResult
+            Recorded trajectories, reaction counts, and the terminal status.
+        """
+
         while True:
             try:
                 self._step()
@@ -149,6 +231,22 @@ class GillespieCore:
                 )
     
     def _step(self) -> None:
+        """Advance the simulation by one reaction event.
+
+        The method checks stopping conditions in this order:
+        1. maximum number of executed events,
+        2. zero total rate,
+        3. proposed next event would exceed t_max.
+
+        If none of them apply, it samples the next reaction, samples the waiting
+        time, applies the particle-count change, and appends the new time.
+
+        Raises
+        ------
+        AbortGillespieCoreError
+            If a termination condition is reached before executing the next event.
+        """
+
         cur_t = self.t_seq[-1]
 
         if (self.max_iter is not None 
@@ -170,13 +268,55 @@ class GillespieCore:
         self.t_seq.append(cur_t + time_step)
 
     def determine_reaction(self, rates: npt.NDArray, total_rate: float) -> int:
+        """Sample the index of the next reaction from the current rates.
+
+        Parameters
+        ----------
+        rates : npt.NDArray
+            Rates of all reactions.
+        total_rate : float
+            Sum of rates.
+
+        Returns
+        -------
+        int
+            Index of the selected reaction.
+        """
+
         probabilities = rates / total_rate
         return self.rng.choice(len(rates), p=probabilities)
 
     def determine_time_step(self, total_rate: float) -> float:
+        """Sample the time until the next reaction event.
+
+        Parameters
+        ----------
+        total_rate : float
+            Current total reaction rate.
+
+        Returns
+        -------
+        float
+            Positive waiting time sampled from an exponential distribution with
+            mean 1 / total_rate.
+        """
+
         return self.rng.exponential(1.0 / total_rate)
 
     def perform_reaction(self, reaction_index: int) -> None:
+        """Apply a sampled reaction and record the updated state.
+
+        The method updates the particle counts according to the sampled reaction 
+        and reaction counts will be updated accordingly. 
+        If the sampled particle change would produce a negative count for some
+        species, the resulting count is clipped to 0.
+
+        Parameters
+        ----------
+        reaction_index : int
+            Index of the forward or backward reaction to apply.
+        """
+
         cur_particle_counts = self.particle_counts_seq[-1]
         new_particle_counts = (
             cur_particle_counts + self.particle_changes[reaction_index])
