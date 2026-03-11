@@ -43,9 +43,6 @@ class GillespieCore:
         Initial particle count for some species. Species not listed here will be 
         initialized with 0 particles.
         Units are particle counts, not molar amounts and not concentration.
-    volume : float | None, optional
-        Reserved for future use. The current implementation stores the value but
-        does not directly apply any volume-dependent scaling inside this class.
     t_max : float | None, optional
         Simulation will terminate when the next reaction time step would exceed this value.
         Units are arbitrary but must be consistent with the rate constants.
@@ -68,7 +65,6 @@ class GillespieCore:
             species_ids: Sequence[str],
             init_particle_counts: Mapping[str, int],
             *,
-            volume: float | None = None,
             t_max: float | None = None,
             max_iter: int | None = 1_000_000,
             seed: int | None = None,
@@ -84,7 +80,6 @@ class GillespieCore:
         
         self.particle_changes = self._create_particle_changes(reactions, species_ids)
         
-        self.volume = volume
         self.t_max = t_max
         self.max_iter = max_iter
 

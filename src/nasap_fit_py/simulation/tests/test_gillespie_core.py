@@ -19,7 +19,6 @@ def test_init_unimolecular():
         reactions,
         species_ids,
         init_particle_counts,
-        volume=1.0,
         t_max=10.0
     )
 
@@ -30,7 +29,6 @@ def test_init_unimolecular():
     assert len(gillespie_core.reaction_counts) == 2
     np.testing.assert_array_equal(
         gillespie_core.reaction_counts, [0, 0])
-    assert gillespie_core.volume == 1.0
     assert gillespie_core.t_max == 10.0
     assert gillespie_core.max_iter == 1_000_000
     assert gillespie_core.t_seq[0] == 0.0
