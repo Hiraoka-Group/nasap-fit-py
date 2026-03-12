@@ -85,7 +85,7 @@ def resolve_rate_constants(
 def create_rates_fun(
     resolved_reactions: Sequence[ResolvedReaction],
     species_ids: Sequence[str],
-) -> Callable[[npt.NDArray], npt.NDArray]:
+) -> Callable[[npt.NDArray[np.int_]], npt.NDArray[np.float64]]:
     """Create a function that calculates reaction rates from species particle counts.
     
     Returns a closure that computes forward and backward rates for all reactions
@@ -101,28 +101,30 @@ def create_rates_fun(
     
     Returns
     -------
-    Callable[[npt.NDArray], npt.NDArray]
-        Callable that takes a particle count array and returns reaction rates.
+    Callable[[npt.NDArray[np.int_]], npt.NDArray[np.float64]]
+        Callable that takes an integer particle count array and returns reaction rates.
         Output is a float64 array of shape (2*n,) where n is the number of reactions.
     """
     # Create mapping from species ID to index
     species_to_index = {species_id: i for i, species_id in enumerate(species_ids)}
     
-    def rates_fun(particle_counts: npt.NDArray) -> npt.NDArray:
+    def rates_fun(
+        particle_counts: npt.NDArray[np.int_],
+    ) -> npt.NDArray[np.float64]:
         """Calculate reaction rates from species particle counts.
         
         Parameters
         ----------
-        particle_counts : npt.NDArray
-            Particle count array with species in order corresponding to species_ids.
+        particle_counts : npt.NDArray[np.int_]
+            Integer particle count array with species in order corresponding to species_ids.
         
         Returns
         -------
-        npt.NDArray
+        npt.NDArray[np.float64]
             Float64 array of shape (2*n,) where n is the number of reactions.
             Even indices contain forward rates, odd indices contain backward rates.
         """
-        rates = np.empty(2 * len(resolved_reactions))
+        rates = np.empty(2 * len(resolved_reactions), dtype=np.float64)
         
         for i, reaction in enumerate(resolved_reactions):
             # Forward reaction (reactants -> products)
