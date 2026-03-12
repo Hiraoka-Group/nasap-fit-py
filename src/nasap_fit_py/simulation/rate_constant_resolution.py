@@ -86,10 +86,10 @@ def create_rates_fun(
     resolved_reactions: Sequence[ResolvedReaction],
     species_ids: Sequence[str],
 ) -> Callable[[npt.NDArray], npt.NDArray]:
-    """Create a function that calculates reaction rates from species concentrations.
+    """Create a function that calculates reaction rates from species particle counts.
     
     Returns a closure that computes forward and backward rates for all reactions
-    based on current concentrations. For n reactions, the function produces a 2n-element
+    based on current particle counts. For n reactions, the function produces a 2n-element
     vector where even indices contain forward rates and odd indices contain backward rates.
     
     Parameters
@@ -97,24 +97,24 @@ def create_rates_fun(
     resolved_reactions : Sequence[ResolvedReaction]
         Sequence of resolved reactions with rate constants.
     species_ids : Sequence[str]
-        Species IDs in order corresponding to concentration array indices.
+        Species IDs in order corresponding to particle count array indices.
     
     Returns
     -------
     Callable[[npt.NDArray], npt.NDArray]
-        Callable that takes a concentration array and returns reaction rates.
+        Callable that takes a particle count array and returns reaction rates.
         Output is a float64 array of shape (2*n,) where n is the number of reactions.
     """
     # Create mapping from species ID to index
     species_to_index = {species_id: i for i, species_id in enumerate(species_ids)}
     
-    def rates_fun(concentrations: npt.NDArray) -> npt.NDArray:
-        """Calculate reaction rates from species concentrations.
+    def rates_fun(particle_counts: npt.NDArray) -> npt.NDArray:
+        """Calculate reaction rates from species particle counts.
         
         Parameters
         ----------
-        concentrations : npt.NDArray
-            Concentration array with species in order corresponding to species_ids.
+        particle_counts : npt.NDArray
+            Particle count array with species in order corresponding to species_ids.
         
         Returns
         -------
@@ -126,15 +126,15 @@ def create_rates_fun(
         
         for i, reaction in enumerate(resolved_reactions):
             # Forward reaction (reactants -> products)
-            rate_f = reaction.rate_constant_f * concentrations[species_to_index[reaction.reactant1]]
+            rate_f = reaction.rate_constant_f * particle_counts[species_to_index[reaction.reactant1]]
             if reaction.reactant2 is not None:
-                rate_f *= concentrations[species_to_index[reaction.reactant2]]
+                rate_f *= particle_counts[species_to_index[reaction.reactant2]]
             rates[2 * i] = rate_f
             
             # Backward reaction (products -> reactants)
-            rate_b = reaction.rate_constant_b * concentrations[species_to_index[reaction.product1]]
+            rate_b = reaction.rate_constant_b * particle_counts[species_to_index[reaction.product1]]
             if reaction.product2 is not None:
-                rate_b *= concentrations[species_to_index[reaction.product2]]
+                rate_b *= particle_counts[species_to_index[reaction.product2]]
             rates[2 * i + 1] = rate_b
         
         return rates

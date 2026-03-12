@@ -246,11 +246,11 @@ def test_unimolecular_reaction():
     ]
     species_ids = ["A", "B"]
     
-    conc_rates_fun = create_rates_fun(resolved_reactions, species_ids)
+    rates_fun = create_rates_fun(resolved_reactions, species_ids)
     
     # Test with specific concentrations: [A]=2.0, [B]=3.0
-    concentrations = np.array([2.0, 3.0])
-    rates = conc_rates_fun(concentrations)
+    particle_counts = np.array([2.0, 3.0])
+    rates = rates_fun(particle_counts)
     
     # Expected: [forward_rate, backward_rate]
     # forward: k_f * [A] = 0.5 * 2.0 = 1.0
@@ -273,11 +273,11 @@ def test_bimolecular_reaction():
     ]
     species_ids = ["A", "B", "C", "D"]
     
-    conc_rates_fun = create_rates_fun(resolved_reactions, species_ids)
+    rates_fun = create_rates_fun(resolved_reactions, species_ids)
     
-    # Test with specific concentrations: [A]=2.0, [B]=3.0, [C]=1.0, [D]=4.0
-    concentrations = np.array([2.0, 3.0, 1.0, 4.0])
-    rates = conc_rates_fun(concentrations)
+    # Test with specific particle counts: [A]=2.0, [B]=3.0, [C]=1.0, [D]=4.0
+    particle_counts = np.array([2.0, 3.0, 1.0, 4.0])
+    rates = rates_fun(particle_counts)
     
     # Expected: [forward_rate, backward_rate]
     # forward: k_f * [A] * [B] = 0.5 * 2.0 * 3.0 = 3.0
@@ -287,7 +287,7 @@ def test_bimolecular_reaction():
 
 
 def test_multiple_reactions():
-    """Test creating conc_rates_fun for multiple reversible reactions."""
+    """Test creating rates_fun for multiple reversible reactions."""
     resolved_reactions = [
         ResolvedReaction(
             reactant1="A",
@@ -308,11 +308,11 @@ def test_multiple_reactions():
     ]
     species_ids = ["A", "B", "C", "D", "E"]
     
-    conc_rates_fun = create_rates_fun(resolved_reactions, species_ids)
+    rates_fun = create_rates_fun(resolved_reactions, species_ids)
     
-    # Test with specific concentrations
-    concentrations = np.array([2.0, 3.0, 1.0, 4.0, 5.0])
-    rates = conc_rates_fun(concentrations)
+    # Test with specific particle counts
+    particle_counts = np.array([2.0, 3.0, 1.0, 4.0, 5.0])
+    rates = rates_fun(particle_counts)
     
     # Expected: 4 elements (2 reactions × 2 directions each)
     # Reaction 0 forward: 0.5 * 2.0 * 3.0 = 3.0

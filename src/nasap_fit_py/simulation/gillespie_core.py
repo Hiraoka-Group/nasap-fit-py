@@ -21,7 +21,7 @@ class GillespieCoreResult:
     t_seq: npt.NDArray
     particle_counts_seq: npt.NDArray[np.int_]
     reaction_counts: npt.NDArray[np.int_]
-    status: Status 
+    status: Status
 
 
 class AbortGillespieCoreError(Exception):
@@ -205,7 +205,6 @@ class GillespieCore:
         The total rate is the intensity parameter of the exponential waiting
         time distribution used by the Gillespie algorithm.
         """
-
         return sum(self.rates)
     
     def solve(self) -> GillespieCoreResult:
@@ -219,7 +218,6 @@ class GillespieCore:
         GillespieCoreResult
             Recorded trajectories, reaction counts, and the terminal status.
         """
-
         while True:
             try:
                 self._step()
@@ -247,7 +245,6 @@ class GillespieCore:
         AbortGillespieCoreError
             If a termination condition is reached before executing the next event.
         """
-
         cur_t = self.t_seq[-1]
 
         if (self.max_iter is not None 
@@ -283,7 +280,6 @@ class GillespieCore:
         int
             Index of the selected reaction.
         """
-
         probabilities = rates / total_rate
         return self.rng.choice(len(rates), p=probabilities)
 
@@ -301,7 +297,6 @@ class GillespieCore:
             Positive waiting time sampled from an exponential distribution with
             mean 1 / total_rate.
         """
-
         return self.rng.exponential(1.0 / total_rate)
 
     def perform_reaction(self, reaction_index: int) -> None:
@@ -317,7 +312,6 @@ class GillespieCore:
         reaction_index : int
             Index of the forward or backward reaction to apply.
         """
-
         cur_particle_counts = self.particle_counts_seq[-1]
         new_particle_counts = (
             cur_particle_counts + self.particle_changes[reaction_index])
