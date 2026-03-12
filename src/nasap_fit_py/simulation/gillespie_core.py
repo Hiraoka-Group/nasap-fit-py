@@ -18,7 +18,7 @@ class Status(Enum):
 
 @dataclass
 class GillespieCoreResult:
-    t_seq: npt.NDArray
+    t_seq: npt.NDArray[np.float64]
     particle_counts_seq: npt.NDArray[np.int_]
     reaction_counts: npt.NDArray[np.int_]
     status: Status
@@ -180,7 +180,7 @@ class GillespieCore:
             )
 
     @property
-    def rates(self) -> npt.NDArray:
+    def rates(self) -> npt.NDArray[np.float64]:
         """Return reaction rates computed from the current particle counts.
 
         Rates are re-evaluated on every access using the latest state,
@@ -188,7 +188,7 @@ class GillespieCore:
 
         Returns
         -------
-        npt.NDArray
+        npt.NDArray[np.float64]
             One-dimensional array of nonnegative rates for all event channels
             at the current simulation state.
             For each reaction, the forward rate appears first and the backward rate 
@@ -196,7 +196,7 @@ class GillespieCore:
             the rates should be in [min^-1].
         """
         cur_particle_counts = self.particle_counts_seq[-1]
-        return np.array(self.rates_fun(cur_particle_counts))
+        return self.rates_fun(cur_particle_counts)
  
     @property
     def total_rate(self) -> float:
@@ -265,12 +265,16 @@ class GillespieCore:
         self.perform_reaction(reaction_index)
         self.t_seq = np.append(self.t_seq, cur_t + time_step)
 
-    def determine_reaction(self, rates: npt.NDArray, total_rate: float) -> int:
+    def determine_reaction(
+        self,
+        rates: npt.NDArray[np.float64],
+        total_rate: float,
+    ) -> int:
         """Sample the index of the next reaction from the current rates.
 
         Parameters
         ----------
-        rates : npt.NDArray
+        rates : npt.NDArray[np.float64]
             Rates of all reactions.
         total_rate : float
             Sum of rates.
