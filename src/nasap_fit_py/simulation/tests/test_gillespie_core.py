@@ -267,3 +267,40 @@ def test_perform_reaction_increments_and_accumulates():
     np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
     np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
     np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
+
+def test_with_example_reaction():
+    # Reaction:
+    # dA/dt = -k * A
+    # dB/dt = k * A
+    # dC/dt = k * A
+    # A0 > 0, B0 = C0 = 0
+    # Analytical solution:
+    # A = A0 * exp(-k * t)
+    # B = A0 * (1 - exp(-k * t))
+    # C = A0 * (1 - exp(-k * t))
+    reactions = [
+        ResolvedReaction('A', None, 'B', 'C', rate_constant_f=0.1, rate_constant_b=0.1),
+    ]
+    species_ids = ['A', 'B', 'C']
+    init_concentration = {'A': 10000}
+    gillespie = GillespieCore(
+        reactions,
+        species_ids,
+        init_concentration,
+        max_iter=1000
+    )
+    result = gillespie.solve()
+
+    expected_A = 10000 * np.exp(-0.1 * result.t_seq)
+    expected_B = 10000 * (1 - np.exp(-0.1 * result.t_seq))
+    expected_C = 10000 * (1 - np.exp(-0.1 * result.t_seq))
+
+    atol = 500  # 5%
+
+    np.testing.assert_allclose(
+        result.particle_counts_seq[:, 0], expected_A, atol=atol)
+    np.testing.assert_allclose(
+        result.particle_counts_seq[:, 1], expected_B, atol=atol)
+    np.testing.assert_allclose(
+        result.particle_counts_seq[:, 2], expected_C, atol=atol)
+    
