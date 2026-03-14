@@ -36,6 +36,8 @@ class Gillespie(GillespieCore):
             seed: int | None = None,
             ) -> None:
         
+        if volume is None:
+            raise ValueError('volume must be specified.')
         if volume <= 0:
             raise ValueError('volume must be positive.')
 
