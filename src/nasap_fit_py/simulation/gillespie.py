@@ -1,0 +1,74 @@
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+
+import numpy as np
+import numpy.typing as npt
+from scipy.constants import Avogadro
+
+from .gillespie_core import GillespieCore, Status
+from .rate_constant_resolution import ResolvedReaction
+
+
+@dataclass
+class GillespieResult:
+    t_seq: npt.NDArray[np.float64]
+    particle_counts_seq: npt.NDArray[np.int_]
+    reaction_counts: npt.NDArray[np.int_]
+    status: Status
+
+
+class Gillespie(GillespieCore):
+    """Concentration-based wrapper of GillespieCore.
+
+    Initial conditions are provided as concentrations [mol/L], and the
+    simulation is executed internally in particle counts.
+    """
+
+    def __init__(
+            self,
+            reactions: Sequence[ResolvedReaction],
+            species_ids: Sequence[str],
+            init_concentrations: Mapping[str, float],
+            volume: float,
+            *,
+            t_max: float | None = None,
+            max_iter: int | None = 1_000_000,
+            seed: int | None = None,
+            ) -> None:
+        
+        if volume <= 0:
+            raise ValueError('volume must be positive.')
+
+        for species_id, concentration in init_concentrations.items():
+            if concentration < 0:
+                raise ValueError(
+                    f'Initial concentration for {species_id} must be non-negative.'
+                )
+
+        self.volume = volume
+
+        init_particle_counts = {
+            species_id: int(concentration * volume * Avogadro)
+            for species_id, concentration in init_concentrations.items()
+        }
+
+        super().__init__(
+            reactions,
+            species_ids,
+            init_particle_counts,
+            t_max=t_max,
+            max_iter=max_iter,
+            seed=seed,
+        )
+
+
+    @property
+    def concentrations_seq(self) -> npt.NDArray[np.float64]:
+        """Return concentration trajectories [mol/L]."""
+        return self.particle_counts_seq.astype(int) / (self.volume * Avogadro)
+
+    @property
+    def concentrations(self) -> npt.NDArray[np.float64]:
+        """Return current concentrations [mol/L]."""
+        return self.concentrations_seq[-1]
+        
