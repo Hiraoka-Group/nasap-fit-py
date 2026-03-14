@@ -5,14 +5,14 @@ import numpy as np
 import numpy.typing as npt
 from scipy.constants import Avogadro
 
-from .gillespie_core import GillespieCore, Status
+from .gillespie_core import GillespieCore, GillespieCoreResult, Status
 from .rate_constant_resolution import ResolvedReaction
 
 
 @dataclass
 class GillespieResult:
     t_seq: npt.NDArray[np.float64]
-    particle_counts_seq: npt.NDArray[np.int_]
+    concentrations_seq: npt.NDArray[np.float64]
     reaction_counts: npt.NDArray[np.int_]
     status: Status
 
@@ -61,14 +61,20 @@ class Gillespie(GillespieCore):
             seed=seed,
         )
 
-
     @property
     def concentrations_seq(self) -> npt.NDArray[np.float64]:
         """Return concentration trajectories [mol/L]."""
-        return self.particle_counts_seq.astype(int) / (self.volume * Avogadro)
+        return self.particle_counts_seq.astype(np.float64) / (self.volume * Avogadro)
 
-    @property
-    def concentrations(self) -> npt.NDArray[np.float64]:
-        """Return current concentrations [mol/L]."""
-        return self.concentrations_seq[-1]
+    def solve(self) -> GillespieResult:  # type: ignore[override]
+        """Run the simulation and return concentration trajectories."""
+        core_result: GillespieCoreResult = super().solve()
+        concentrations_seq = self.concentrations_seq
+
+        return GillespieResult(
+            core_result.t_seq,
+            concentrations_seq,
+            core_result.reaction_counts,
+            core_result.status,
+        )
         
