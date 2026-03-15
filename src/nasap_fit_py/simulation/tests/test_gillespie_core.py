@@ -287,7 +287,8 @@ def test_with_example_reaction():
         reactions,
         species_ids,
         init_particle_counts,
-        max_iter=1000
+        max_iter=1000,
+        seed=42,
     )
     result = gillespie.solve()
 
