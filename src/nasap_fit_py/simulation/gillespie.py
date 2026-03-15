@@ -50,7 +50,7 @@ class Gillespie(GillespieCore):
         self.volume = volume
 
         init_particle_counts = {
-            species_id: int(concentration * volume * Avogadro)
+            species_id: int(np.rint(concentration * volume * Avogadro))
             for species_id, concentration in init_concentrations.items()
         }
 

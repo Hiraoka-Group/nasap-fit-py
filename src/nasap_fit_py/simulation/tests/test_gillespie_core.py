@@ -279,14 +279,14 @@ def test_with_example_reaction():
     # B = A0 * (1 - exp(-k * t))
     # C = A0 * (1 - exp(-k * t))
     reactions = [
-        ResolvedReaction('A', None, 'B', 'C', rate_constant_f=0.1, rate_constant_b=0.1),
+        ResolvedReaction('A', None, 'B', 'C', rate_constant_f=0.1, rate_constant_b=0.0),
     ]
     species_ids = ['A', 'B', 'C']
-    init_concentration = {'A': 10000}
+    init_particle_counts = {'A': 10000}
     gillespie = GillespieCore(
         reactions,
         species_ids,
-        init_concentration,
+        init_particle_counts,
         max_iter=1000
     )
     result = gillespie.solve()
