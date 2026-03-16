@@ -49,10 +49,10 @@ class Gillespie:
 
         self.volume = volume
 
-        init_particle_counts = {
-            species_id: int(np.rint(concentration * volume * Avogadro))
-            for species_id, concentration in init_concentrations.items()
-        }
+        init_particle_counts = self._build_init_particle_counts(
+            init_concentrations,
+            volume,
+        )
 
         self._core = GillespieCore(
             reactions,
@@ -63,25 +63,38 @@ class Gillespie:
             seed=seed,
         )
 
-    @property
-    def t_seq(self) -> npt.NDArray[np.float64]:
-        return self._core.t_seq
+    @staticmethod
+    def _build_init_particle_counts(
+            init_concentrations: Mapping[str, float],
+            volume: float,
+            ) -> dict[str, int]:
+        max_int = np.iinfo(np.int_).max
+        init_particle_counts: dict[str, int] = {}
 
-    @property
-    def particle_counts_seq(self) -> npt.NDArray[np.int_]:
-        return self._core.particle_counts_seq
+        for species_id, concentration in init_concentrations.items():
+            particle_count_float = np.rint(concentration * volume * Avogadro)
+            if not np.isfinite(particle_count_float):
+                raise ValueError(
+                    f"Initial particle count for {species_id} is not finite "
+                    f"(concentration={concentration}, volume={volume})."
+                )
+            if particle_count_float < 0:
+                # This should not happen because concentrations are validated above,
+                # but we guard against numerical artifacts.
+                raise ValueError(
+                    f"Initial particle count for {species_id} is negative after conversion "
+                    f"(count={particle_count_float}, concentration={concentration}, "
+                    f"volume={volume})."
+                )
+            if particle_count_float > max_int:
+                raise ValueError(
+                    f"Initial particle count for {species_id}={particle_count_float:.3e} "
+                    f"exceeds the maximum supported integer {max_int} for NumPy int_ "
+                    f"(concentration={concentration}, volume={volume})."
+                )
+            init_particle_counts[species_id] = int(particle_count_float)
 
-    @property
-    def reaction_counts(self) -> npt.NDArray[np.int_]:
-        return self._core.reaction_counts
-
-    @property
-    def rates(self) -> npt.NDArray[np.float64]:
-        return self._core.rates
-
-    @property
-    def total_rate(self) -> float:
-        return self._core.total_rate
+        return init_particle_counts
 
     def solve(self) -> GillespieResult:
         """Run the simulation and return concentration trajectories."""
