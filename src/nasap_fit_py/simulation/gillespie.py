@@ -83,15 +83,13 @@ class Gillespie:
     def total_rate(self) -> float:
         return self._core.total_rate
 
-    @property
-    def concentrations_seq(self) -> npt.NDArray[np.float64]:
-        """Return concentration trajectories [mol/L]."""
-        return self.particle_counts_seq.astype(np.float64) / (self.volume * Avogadro)
-
     def solve(self) -> GillespieResult:
         """Run the simulation and return concentration trajectories."""
         core_result: GillespieCoreResult = self._core.solve()
-        concentrations_seq = self.concentrations_seq
+        
+        concentrations_seq = (
+            core_result.particle_counts_seq.astype(np.float64) / (self.volume * Avogadro)
+            )
 
         return GillespieResult(
             core_result.t_seq,
