@@ -26,7 +26,8 @@ def test_init():
         )
     np.testing.assert_allclose(
         gillespie.particle_counts_seq[0], [2.0*volume*Avogadro, 1.0*volume*Avogadro, 0.5*volume*Avogadro])
-    
+
+
 def test_solve():
     reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
@@ -89,6 +90,7 @@ def test_internal_particle_counts_are_used_in_simulation():
         np.array([[-1, 1], [-1, 1]], dtype=np.int_),
     )
 
+
 def test_init_no_volume():
     reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
@@ -108,6 +110,7 @@ def test_init_no_volume():
 
     assert str(exc_info.value) == 'volume must be specified.'
 
+
 def test_init_volume_non_positive():
     reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
@@ -125,6 +128,7 @@ def test_init_volume_non_positive():
         )
 
     assert str(exc_info.value) == 'volume must be positive.'
+
 
 def test_init_concentration_negative():
     reactions = [
