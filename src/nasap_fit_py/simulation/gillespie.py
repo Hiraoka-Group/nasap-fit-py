@@ -17,7 +17,7 @@ class GillespieResult:
     status: Status
 
 
-class Gillespie(GillespieCore):
+class Gillespie:
     """Concentration-based wrapper of GillespieCore.
 
     Initial conditions are provided as concentrations [mol/L], and the
@@ -54,7 +54,7 @@ class Gillespie(GillespieCore):
             for species_id, concentration in init_concentrations.items()
         }
 
-        super().__init__(
+        self._core = GillespieCore(
             reactions,
             species_ids,
             init_particle_counts,
@@ -64,13 +64,33 @@ class Gillespie(GillespieCore):
         )
 
     @property
+    def t_seq(self) -> npt.NDArray[np.float64]:
+        return self._core.t_seq
+
+    @property
+    def particle_counts_seq(self) -> npt.NDArray[np.int_]:
+        return self._core.particle_counts_seq
+
+    @property
+    def reaction_counts(self) -> npt.NDArray[np.int_]:
+        return self._core.reaction_counts
+
+    @property
+    def rates(self) -> npt.NDArray[np.float64]:
+        return self._core.rates
+
+    @property
+    def total_rate(self) -> float:
+        return self._core.total_rate
+
+    @property
     def concentrations_seq(self) -> npt.NDArray[np.float64]:
         """Return concentration trajectories [mol/L]."""
         return self.particle_counts_seq.astype(np.float64) / (self.volume * Avogadro)
 
-    def solve(self) -> GillespieResult:  # type: ignore[override]
+    def solve(self) -> GillespieResult:
         """Run the simulation and return concentration trajectories."""
-        core_result: GillespieCoreResult = super().solve()
+        core_result: GillespieCoreResult = self._core.solve()
         concentrations_seq = self.concentrations_seq
 
         return GillespieResult(
