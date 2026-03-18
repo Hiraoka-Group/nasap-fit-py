@@ -24,8 +24,11 @@ def test_init():
         volume,
         t_max=10.0,
         )
+    # White-box assertion: check converted particle counts held in the internal core.
     np.testing.assert_allclose(
-        gillespie.particle_counts_seq[0], [2.0*volume*Avogadro, 1.0*volume*Avogadro, 0.5*volume*Avogadro])
+        gillespie._core.particle_counts_seq[0],
+        [2.0 * volume * Avogadro, 1.0 * volume * Avogadro, 0.5 * volume * Avogadro],
+    )
 
 
 def test_solve():
@@ -72,21 +75,22 @@ def test_internal_particle_counts_are_used_in_simulation():
     result = gillespie.solve()
 
     assert result.status == Status.REACHED_MAX_ITER
-    assert np.issubdtype(gillespie.particle_counts_seq.dtype, np.integer)
+    # White-box assertions: verify simulation state transitions in the internal core.
+    assert np.issubdtype(gillespie._core.particle_counts_seq.dtype, np.integer)
     np.testing.assert_array_equal(
-        gillespie.particle_counts_seq[0],
+        gillespie._core.particle_counts_seq[0],
         np.array([3, 0], dtype=np.int_),
     )
     np.testing.assert_array_equal(
-        gillespie.particle_counts_seq[1],
+        gillespie._core.particle_counts_seq[1],
         np.array([2, 1], dtype=np.int_),
     )
     np.testing.assert_array_equal(
-        gillespie.particle_counts_seq[2],
+        gillespie._core.particle_counts_seq[2],
         np.array([1, 2], dtype=np.int_),
     )
     np.testing.assert_array_equal(
-        np.diff(gillespie.particle_counts_seq, axis=0),
+        np.diff(gillespie._core.particle_counts_seq, axis=0),
         np.array([[-1, 1], [-1, 1]], dtype=np.int_),
     )
 
