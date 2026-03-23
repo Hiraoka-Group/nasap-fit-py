@@ -5,8 +5,8 @@ import numpy as np
 import numpy.typing as npt
 from scipy.constants import Avogadro
 
+from ..models import ResolvedReaction
 from .gillespie_core import GillespieCore, GillespieCoreResult, Status
-from .rate_constant_resolution import ResolvedReaction
 
 
 @dataclass
@@ -35,7 +35,7 @@ class Gillespie:
             max_iter: int | None = 1_000_000,
             seed: int | None = None,
             ) -> None:
-        
+
         if volume is None:
             raise ValueError('volume must be specified.')
         if volume <= 0:
@@ -99,7 +99,7 @@ class Gillespie:
     def solve(self) -> GillespieResult:
         """Run the simulation and return concentration trajectories."""
         core_result: GillespieCoreResult = self._core.solve()
-        
+
         concentrations_seq = (
             core_result.particle_counts_seq.astype(np.float64) / (self.volume * Avogadro)
             )
@@ -110,4 +110,3 @@ class Gillespie:
             core_result.reaction_counts,
             core_result.status,
         )
-        

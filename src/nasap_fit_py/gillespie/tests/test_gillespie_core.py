@@ -1,11 +1,10 @@
 import numpy as np
 import pytest
 
-from src.nasap_fit_py.simulation.gillespie_core import (GillespieCore,
-                                                        GillespieCoreResult,
-                                                        Status)
-from src.nasap_fit_py.simulation.rate_constant_resolution import \
-    ResolvedReaction
+from src.nasap_fit_py.gillespie.gillespie_core import (GillespieCore,
+                                                       GillespieCoreResult,
+                                                       Status)
+from src.nasap_fit_py.models import ResolvedReaction
 
 
 def test_init_unimolecular():
@@ -38,7 +37,7 @@ def test_init_bimolecular():
     reactions = [
         ResolvedReaction('A', 'B', 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
-    species_ids = ['A', 'B', 'C']  
+    species_ids = ['A', 'B', 'C']
     init_particle_counts = {'A': 300, 'B': 200, 'C': 50}
     tmax = 10.0
 
@@ -54,7 +53,7 @@ def test_init_bimolecular():
     np.testing.assert_allclose(
         gillespie_core.particle_changes, [[-1, -1, 1], [1, 1, -1]])
     assert len(gillespie_core.reaction_counts) == 2
-    
+
 
 def test_init_duplicate_reactions():
     # r1: A <-> B
@@ -120,7 +119,7 @@ def test_solve():
 
     assert isinstance(result, GillespieCoreResult)
     assert result.status in {
-        Status.REACHED_T_MAX, Status.REACHED_MAX_ITER, 
+        Status.REACHED_T_MAX, Status.REACHED_MAX_ITER,
         Status.TOTAL_RATE_ZERO}
     assert result.t_seq[0] == 0.0
     np.testing.assert_allclose(
@@ -129,7 +128,7 @@ def test_solve():
     assert result.reaction_counts[0] >= 0
     assert result.reaction_counts[1] >= 0
 
-    
+
 def test_solve_reaction_counts_sum_equals_time_steps():
     # A <-> B
     reactions = [
@@ -137,14 +136,14 @@ def test_solve_reaction_counts_sum_equals_time_steps():
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 100}
-    
+
     gillespie_core = GillespieCore(
         reactions,
         species_ids,
         init_particle_counts,
         max_iter=100
     )
-    
+
     result = gillespie_core.solve()
 
     assert result.status == Status.REACHED_MAX_ITER
@@ -160,13 +159,12 @@ def test_solve_reaction_rate_affects_count_distribution():
     init_particle_counts = {'A': 300, 'B': 50}
     gillespie_core = GillespieCore(
         reactions, species_ids, init_particle_counts, t_max=10.0,
-        max_iter=100, seed=42) 
-    
+        max_iter=100, seed=42)
+
     result = gillespie_core.solve()
 
     assert result.reaction_counts[0] >= result.reaction_counts[1]
-        # Higher-rate reaction should occur more frequently
-    
+
 
 def test_status_of_max_iter_reached():
     # A <-> B
@@ -184,15 +182,12 @@ def test_status_of_max_iter_reached():
     )
 
     result = gillespie_core.solve()
-    
+
     assert result.status == Status.REACHED_MAX_ITER
 
 
 def test_status_of_total_rate_zero():
     # A -> B (only one direction)
-
-    # Few particles, so the total rate becomes zero
-    # before the max iteration is reached.
     reactions = [
         ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.0),
     ]
@@ -205,10 +200,7 @@ def test_status_of_total_rate_zero():
         t_max=100.0,
         max_iter=100
     )
-    
-    # A becomes zero only in 10 steps,
-    # which makes the total rate zero.
-    
+
     result = gillespie_core.solve()
 
     assert result.status == Status.TOTAL_RATE_ZERO
@@ -228,11 +220,7 @@ def test_status_of_t_max_reached():
         t_max=0.1,
         max_iter=1000
     )
-    
-    # Since the reaction is reversible,
-    # the number of A and B will never become zero.
-    # Therefore, the simulation will stop when t_max is reached.
-    
+
     result = gillespie_core.solve()
 
     assert result.status == Status.REACHED_T_MAX
@@ -250,34 +238,24 @@ def test_perform_reaction_increments_and_accumulates():
         reactions, species_ids, init_particle_counts,
         t_max=10.0, max_iter=10)
 
-    # Initial state: both counters should be 0
     np.testing.assert_array_equal(gillespie_core.reaction_counts, [0, 0])
 
-    # Perform forward reaction: only its counter should increase
     gillespie_core.perform_reaction(0)
     np.testing.assert_array_equal(gillespie_core.reaction_counts, [1, 0])
 
-    # Perform reverse reaction: only its counter should increase
     gillespie_core.perform_reaction(1)
     np.testing.assert_array_equal(gillespie_core.reaction_counts, [1, 1])
 
-    # Perform reaction 0 twice more
     gillespie_core.perform_reaction(0)
     gillespie_core.perform_reaction(0)
     np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
-    np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
-    np.testing.assert_array_equal(gillespie_core.reaction_counts, [3, 1])
+
 
 def test_with_example_reaction():
     # Reaction:
     # dA/dt = -k * A
     # dB/dt = k * A
     # dC/dt = k * A
-    # A0 > 0, B0 = C0 = 0
-    # Analytical solution:
-    # A = A0 * exp(-k * t)
-    # B = A0 * (1 - exp(-k * t))
-    # C = A0 * (1 - exp(-k * t))
     reactions = [
         ResolvedReaction('A', None, 'B', 'C', rate_constant_f=0.1, rate_constant_b=0.0),
     ]
@@ -292,16 +270,15 @@ def test_with_example_reaction():
     )
     result = gillespie.solve()
 
-    expected_A = 10000 * np.exp(-0.1 * result.t_seq)
-    expected_B = 10000 * (1 - np.exp(-0.1 * result.t_seq))
-    expected_C = 10000 * (1 - np.exp(-0.1 * result.t_seq))
+    expected_a = 10000 * np.exp(-0.1 * result.t_seq)
+    expected_b = 10000 * (1 - np.exp(-0.1 * result.t_seq))
+    expected_c = 10000 * (1 - np.exp(-0.1 * result.t_seq))
 
     atol = 500  # 5%
 
     np.testing.assert_allclose(
-        result.particle_counts_seq[:, 0], expected_A, atol=atol)
+        result.particle_counts_seq[:, 0], expected_a, atol=atol)
     np.testing.assert_allclose(
-        result.particle_counts_seq[:, 1], expected_B, atol=atol)
+        result.particle_counts_seq[:, 1], expected_b, atol=atol)
     np.testing.assert_allclose(
-        result.particle_counts_seq[:, 2], expected_C, atol=atol)
-    
+        result.particle_counts_seq[:, 2], expected_c, atol=atol)
