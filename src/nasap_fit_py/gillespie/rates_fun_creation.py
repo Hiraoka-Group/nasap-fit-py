@@ -5,7 +5,7 @@ from collections.abc import Callable, Sequence
 import numpy as np
 import numpy.typing as npt
 
-from ..models import ResolvedReaction
+from src.nasap_fit_py.models import ResolvedReaction
 
 
 def create_rates_fun(

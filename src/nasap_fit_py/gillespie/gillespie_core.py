@@ -5,7 +5,8 @@ from enum import Enum, auto
 import numpy as np
 import numpy.typing as npt
 
-from ..models import ResolvedReaction
+from src.nasap_fit_py.models import ResolvedReaction
+
 from .rates_fun_creation import create_rates_fun
 
 

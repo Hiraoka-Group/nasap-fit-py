@@ -4,7 +4,7 @@ import pytest
 from src.nasap_fit_py.gillespie.gillespie_core import (GillespieCore,
                                                        GillespieCoreResult,
                                                        Status)
-from src.nasap_fit_py.models import ResolvedReaction
+from src.nasap_fit_py.models.resolved_reaction import ResolvedReaction
 
 
 def test_init_unimolecular():

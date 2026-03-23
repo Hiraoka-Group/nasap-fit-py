@@ -5,7 +5,8 @@ import numpy as np
 import numpy.typing as npt
 from scipy.constants import Avogadro
 
-from ..models import ResolvedReaction
+from src.nasap_fit_py.models import ResolvedReaction
+
 from .gillespie_core import GillespieCore, GillespieCoreResult, Status
 
 
