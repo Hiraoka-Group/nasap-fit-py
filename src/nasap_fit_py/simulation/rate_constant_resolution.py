@@ -1,37 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
 
-
-@dataclass
-class Reaction:
-    reactant1: str
-    reactant2: str | None
-    product1: str
-    product2: str | None
-    reaction_type: str
-    duplicate_count_f: int
-    duplicate_count_b: int
-
-
-@dataclass(frozen=True)
-class RateConstant:
-    forward: float
-    backward: float
-
-
-@dataclass(frozen=True)
-class ResolvedReaction:
-    reactant1: str
-    reactant2: str | None
-    product1: str
-    product2: str | None
-    rate_constant_f: float
-    rate_constant_b: float
+from ..models import RateConstant, Reaction, ResolvedReaction
 
 
 def resolve_rate_constants(
