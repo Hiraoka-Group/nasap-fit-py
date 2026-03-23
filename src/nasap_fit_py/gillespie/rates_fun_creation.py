@@ -5,7 +5,7 @@ from collections.abc import Callable, Sequence
 import numpy as np
 import numpy.typing as npt
 
-from . import ResolvedReaction
+from ..models import ResolvedReaction
 
 
 def create_rates_fun(

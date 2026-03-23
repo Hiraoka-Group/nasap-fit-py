@@ -1,6 +1,6 @@
 import numpy as np
 
-from nasap_fit_py.models.rates_fun_creation import create_rates_fun
+from nasap_fit_py.gillespie.rates_fun_creation import create_rates_fun
 from nasap_fit_py.models.resolved_reaction import ResolvedReaction
 
 

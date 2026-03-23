@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from ..models import ResolvedReaction
-from ..models.rates_fun_creation import create_rates_fun
+from .rates_fun_creation import create_rates_fun
 
 
 class Status(Enum):
