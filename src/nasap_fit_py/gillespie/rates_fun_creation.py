@@ -5,11 +5,11 @@ from collections.abc import Callable, Sequence
 import numpy as np
 import numpy.typing as npt
 
-from src.nasap_fit_py.models import ResolvedReaction
+from src.nasap_fit_py.models import Reaction
 
 
 def create_rates_fun(
-    resolved_reactions: Sequence[ResolvedReaction],
+    resolved_reactions: Sequence[Reaction],
     species_ids: Sequence[str],
 ) -> Callable[[npt.NDArray[np.int_]], npt.NDArray[np.float64]]:
     """Create a function that calculates reaction rates from species particle counts.

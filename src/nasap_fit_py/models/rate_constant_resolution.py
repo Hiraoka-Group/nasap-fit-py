@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from . import RateConstant, Reaction, ResolvedReaction
+from . import RateConstant, Reaction, ReactionWithType
 
 
 def resolve_rate_constants(
-    reactions: Sequence[Reaction],
+    reactions: Sequence[ReactionWithType],
     rtype_to_rate_constant: Mapping[str, RateConstant],
-) -> Sequence[ResolvedReaction]:
+) -> Sequence[Reaction]:
     """Apply rate constants to reactions, accounting for duplicate pathways.
     
     Parameters
@@ -42,7 +42,7 @@ def resolve_rate_constants(
                 f"Reaction type '{r.reaction_type}' is not defined in rate_constants. "
                 f"This is the corresponding reaction: {reaction_desc}. "
             )
-        resolved_reactions.append(ResolvedReaction(
+        resolved_reactions.append(Reaction(
                 reactant1=r.reactant1,
                 reactant2=r.reactant2,
                 product1=r.product1,

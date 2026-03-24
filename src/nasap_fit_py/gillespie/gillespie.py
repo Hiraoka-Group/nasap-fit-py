@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.constants import Avogadro
 
-from src.nasap_fit_py.models import ResolvedReaction
+from src.nasap_fit_py.models import Reaction
 
 from .gillespie_core import GillespieCore, GillespieCoreResult, Status
 
@@ -27,7 +27,7 @@ class Gillespie:
 
     def __init__(
             self,
-            reactions: Sequence[ResolvedReaction],
+            reactions: Sequence[Reaction],
             species_ids: Sequence[str],
             init_concentrations: Mapping[str, float],
             volume: float,

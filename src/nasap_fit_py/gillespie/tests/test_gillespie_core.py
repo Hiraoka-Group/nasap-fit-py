@@ -1,16 +1,16 @@
 import numpy as np
 import pytest
 
+from nasap_fit_py.models.reaction import Reaction
 from src.nasap_fit_py.gillespie.gillespie_core import (GillespieCore,
                                                        GillespieCoreResult,
                                                        Status)
-from src.nasap_fit_py.models.resolved_reaction import ResolvedReaction
 
 
 def test_init_unimolecular():
     # A <-> B
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        Reaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
@@ -35,7 +35,7 @@ def test_init_unimolecular():
 
 def test_init_bimolecular():
     reactions = [
-        ResolvedReaction('A', 'B', 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        Reaction('A', 'B', 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B', 'C']
     init_particle_counts = {'A': 300, 'B': 200, 'C': 50}
@@ -59,8 +59,8 @@ def test_init_duplicate_reactions():
     # r1: A <-> B
     # r2: B <-> C
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
-        ResolvedReaction('B', None, 'C', None, rate_constant_f=0.2, rate_constant_b=0.1),
+        Reaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        Reaction('B', None, 'C', None, rate_constant_f=0.2, rate_constant_b=0.1),
     ]
     species_ids = ['A', 'B', 'C']
     init_particle_counts = {'A': 100, 'B': 200, 'C': 50}
@@ -82,7 +82,7 @@ def test_init_duplicate_reactions():
 
 def test_init_raises_when_reaction_species_not_in_species_ids():
     reactions = [
-        ResolvedReaction('A', None, 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        Reaction('A', None, 'C', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
@@ -103,7 +103,7 @@ def test_init_raises_when_reaction_species_not_in_species_ids():
 def test_solve():
     # A <-> B
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        Reaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
@@ -132,7 +132,7 @@ def test_solve():
 def test_solve_reaction_counts_sum_equals_time_steps():
     # A <-> B
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.8, rate_constant_b=0.2),
+        Reaction('A', None, 'B', None, rate_constant_f=0.8, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 100}
@@ -153,7 +153,7 @@ def test_solve_reaction_counts_sum_equals_time_steps():
 def test_solve_reaction_rate_affects_count_distribution():
     # A <-> B with significantly different rates
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=1.8, rate_constant_b=0.2),
+        Reaction('A', None, 'B', None, rate_constant_f=1.8, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 300, 'B': 50}
@@ -169,7 +169,7 @@ def test_solve_reaction_rate_affects_count_distribution():
 def test_status_of_max_iter_reached():
     # A <-> B
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        Reaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
@@ -189,7 +189,7 @@ def test_status_of_max_iter_reached():
 def test_status_of_total_rate_zero():
     # A -> B (only one direction)
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.0),
+        Reaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.0),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 10, 'B': 0}
@@ -209,7 +209,7 @@ def test_status_of_total_rate_zero():
 def test_status_of_t_max_reached():
     # A <-> B
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        Reaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 100, 'B': 200}
@@ -229,7 +229,7 @@ def test_status_of_t_max_reached():
 def test_perform_reaction_increments_and_accumulates():
     # A <-> B
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
+        Reaction('A', None, 'B', None, rate_constant_f=0.1, rate_constant_b=0.2),
     ]
     species_ids = ['A', 'B']
     init_particle_counts = {'A': 5, 'B': 5}
@@ -257,7 +257,7 @@ def test_with_example_reaction():
     # dB/dt = k * A
     # dC/dt = k * A
     reactions = [
-        ResolvedReaction('A', None, 'B', 'C', rate_constant_f=0.1, rate_constant_b=0.0),
+        Reaction('A', None, 'B', 'C', rate_constant_f=0.1, rate_constant_b=0.0),
     ]
     species_ids = ['A', 'B', 'C']
     init_particle_counts = {'A': 10000}

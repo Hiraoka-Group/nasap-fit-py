@@ -1,13 +1,13 @@
 import numpy as np
 
+from nasap_fit_py.models.reaction import Reaction
 from src.nasap_fit_py.gillespie.rates_fun_creation import create_rates_fun
-from src.nasap_fit_py.models.resolved_reaction import ResolvedReaction
 
 
 def test_unimolecular_reaction():
     """Test creating conc_rates_fun for a unimolecular reversible reaction: A <-> B."""
     resolved_reactions = [
-        ResolvedReaction(
+        Reaction(
             reactant1="A",
             reactant2=None,
             product1="B",
@@ -33,7 +33,7 @@ def test_unimolecular_reaction():
 def test_bimolecular_reaction():
     """Test creating conc_rates_fun for a bimolecular reversible reaction: A + B <-> C + D."""
     resolved_reactions = [
-        ResolvedReaction(
+        Reaction(
             reactant1="A",
             reactant2="B",
             product1="C",
@@ -59,7 +59,7 @@ def test_bimolecular_reaction():
 def test_multiple_reactions():
     """Test creating rates_fun for multiple reversible reactions."""
     resolved_reactions = [
-        ResolvedReaction(
+        Reaction(
             reactant1="A",
             reactant2="B",
             product1="C",
@@ -67,7 +67,7 @@ def test_multiple_reactions():
             rate_constant_f=0.5,
             rate_constant_b=0.1,
         ),
-        ResolvedReaction(
+        Reaction(
             reactant1="B",
             reactant2="C",
             product1="D",

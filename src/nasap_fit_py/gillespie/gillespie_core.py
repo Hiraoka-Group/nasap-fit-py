@@ -5,7 +5,7 @@ from enum import Enum, auto
 import numpy as np
 import numpy.typing as npt
 
-from src.nasap_fit_py.models import ResolvedReaction
+from src.nasap_fit_py.models import Reaction
 
 from .rates_fun_creation import create_rates_fun
 
@@ -63,7 +63,7 @@ class GillespieCore:
     """
     def __init__(
             self,
-            reactions: Sequence[ResolvedReaction],
+            reactions: Sequence[Reaction],
             species_ids: Sequence[str],
             init_particle_counts: Mapping[str, int],
             *,
@@ -99,7 +99,7 @@ class GillespieCore:
 
     @staticmethod
     def _create_particle_changes(
-        reactions: Sequence[ResolvedReaction],
+        reactions: Sequence[Reaction],
         species_ids: Sequence[str],
     ) -> npt.NDArray[np.int_]:
         """Create particle-count deltas for each forward and backward reaction.
@@ -151,7 +151,7 @@ class GillespieCore:
 
     @staticmethod
     def _validate_reaction_species_ids(
-        reactions: Sequence[ResolvedReaction],
+        reactions: Sequence[Reaction],
         species_ids: Sequence[str],
     ) -> None:
         """Validate that all species used in reactions are listed in species_ids.
