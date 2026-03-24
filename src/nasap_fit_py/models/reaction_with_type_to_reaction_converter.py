@@ -5,7 +5,7 @@ from collections.abc import Mapping, Sequence
 from . import RateConstant, Reaction, ReactionWithType
 
 
-def resolve_rate_constants(
+def convert_reaction_with_type_to_reaction(
     reactions_with_type: Sequence[ReactionWithType],
     rtype_to_rate_constant: Mapping[str, RateConstant],
 ) -> Sequence[Reaction]:
