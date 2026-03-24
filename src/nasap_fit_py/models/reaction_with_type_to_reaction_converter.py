@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from . import RateConstant, Reaction, ReactionWithType
+from .rate_constant import RateConstant
+from .reaction import Reaction
+from .reaction_with_type import ReactionWithType
 
 
 def convert_reaction_with_type_to_reaction(
@@ -28,7 +30,7 @@ def convert_reaction_with_type_to_reaction(
     ValueError
         If a reaction type is not found in rtype_to_rate_constant.
     """
-    reactions = []
+    reactions: list[Reaction] = []
     for rwt in reactions_with_type:
         if rwt.reaction_type not in rtype_to_rate_constant:
             reaction_desc = f"{rwt.reactant1}"
@@ -42,12 +44,14 @@ def convert_reaction_with_type_to_reaction(
                 f"Reaction type '{rwt.reaction_type}' is not defined in rate_constants. "
                 f"This is the corresponding reaction: {reaction_desc}. "
             )
-        reactions.append(Reaction(
+        reactions.append(
+            Reaction(
                 reactant1=rwt.reactant1,
                 reactant2=rwt.reactant2,
                 product1=rwt.product1,
                 product2=rwt.product2,
                 rate_constant_f=rtype_to_rate_constant[rwt.reaction_type].forward * rwt.duplicate_count_f,
                 rate_constant_b=rtype_to_rate_constant[rwt.reaction_type].backward * rwt.duplicate_count_b,
-        ))
+            )
+        )
     return reactions

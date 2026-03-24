@@ -90,4 +90,3 @@ def test_multiple_reactions():
     # Reaction 1 backward: 0.2 * 4 * 5 = 4.0
     expected_rates = np.array([3.0, 0.4, 3.0, 4.0])
     np.testing.assert_allclose(rates, expected_rates)
-    np.testing.assert_allclose(rates, expected_rates)
