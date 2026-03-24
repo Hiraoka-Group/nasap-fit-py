@@ -9,7 +9,7 @@ from src.nasap_fit_py.models import Reaction
 
 
 def create_rates_fun(
-    resolved_reactions: Sequence[Reaction],
+    reactions: Sequence[Reaction],
     species_ids: Sequence[str],
 ) -> Callable[[npt.NDArray[np.int_]], npt.NDArray[np.float64]]:
     """Create a function that calculates reaction rates from species particle counts.
@@ -20,8 +20,8 @@ def create_rates_fun(
     
     Parameters
     ----------
-    resolved_reactions : Sequence[ResolvedReaction]
-        Sequence of resolved reactions with rate constants.
+    reactions : Sequence[Reaction]
+        Sequence of reactions with rate constants.
     species_ids : Sequence[str]
         Species IDs in order corresponding to particle count array indices.
     
@@ -50,9 +50,9 @@ def create_rates_fun(
             Float64 array of shape (2*n,) where n is the number of reactions.
             Even indices contain forward rates, odd indices contain backward rates.
         """
-        rates = np.empty(2 * len(resolved_reactions), dtype=np.float64)
+        rates = np.empty(2 * len(reactions), dtype=np.float64)
         
-        for i, reaction in enumerate(resolved_reactions):
+        for i, reaction in enumerate(reactions):
             # Forward reaction (reactants -> products)
             rate_f = reaction.rate_constant_f * particle_counts[species_to_index[reaction.reactant1]]
             if reaction.reactant2 is not None:

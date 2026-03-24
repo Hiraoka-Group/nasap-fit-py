@@ -6,21 +6,21 @@ from . import RateConstant, Reaction, ReactionWithType
 
 
 def resolve_rate_constants(
-    reactions: Sequence[ReactionWithType],
+    reactions_with_type: Sequence[ReactionWithType],
     rtype_to_rate_constant: Mapping[str, RateConstant],
 ) -> Sequence[Reaction]:
     """Apply rate constants to reactions, accounting for duplicate pathways.
     
     Parameters
     ----------
-    reactions : Sequence[Reaction]
-        Sequence of reactions to resolve.
+    reactions_with_type : Sequence[ReactionWithType]
+        Sequence of reactions with types to resolve.
     rtype_to_rate_constant : Mapping[str, RateConstant]
         Mapping from reaction type to rate constants.
     
     Returns
     -------
-    Sequence[ResolvedReaction]
+    Sequence[Reaction]
         Sequence of reactions with rate constants applied and duplicates multiplied in.
     
     Raises
@@ -28,26 +28,26 @@ def resolve_rate_constants(
     ValueError
         If a reaction type is not found in rtype_to_rate_constant.
     """
-    resolved_reactions = []
-    for r in reactions:
-        if r.reaction_type not in rtype_to_rate_constant:
-            reaction_desc = f"{r.reactant1}"
-            if r.reactant2:
-                reaction_desc += f" + {r.reactant2}"
+    reactions = []
+    for rwt in reactions_with_type:
+        if rwt.reaction_type not in rtype_to_rate_constant:
+            reaction_desc = f"{rwt.reactant1}"
+            if rwt.reactant2:
+                reaction_desc += f" + {rwt.reactant2}"
             reaction_desc += " -> "
-            reaction_desc += f"{r.product1}"
-            if r.product2:
-                reaction_desc += f" + {r.product2}"
+            reaction_desc += f"{rwt.product1}"
+            if rwt.product2:
+                reaction_desc += f" + {rwt.product2}"
             raise ValueError(
-                f"Reaction type '{r.reaction_type}' is not defined in rate_constants. "
+                f"Reaction type '{rwt.reaction_type}' is not defined in rate_constants. "
                 f"This is the corresponding reaction: {reaction_desc}. "
             )
-        resolved_reactions.append(Reaction(
-                reactant1=r.reactant1,
-                reactant2=r.reactant2,
-                product1=r.product1,
-                product2=r.product2,
-                rate_constant_f=rtype_to_rate_constant[r.reaction_type].forward * r.duplicate_count_f,
-                rate_constant_b=rtype_to_rate_constant[r.reaction_type].backward * r.duplicate_count_b,
+        reactions.append(Reaction(
+                reactant1=rwt.reactant1,
+                reactant2=rwt.reactant2,
+                product1=rwt.product1,
+                product2=rwt.product2,
+                rate_constant_f=rtype_to_rate_constant[rwt.reaction_type].forward * rwt.duplicate_count_f,
+                rate_constant_b=rtype_to_rate_constant[rwt.reaction_type].backward * rwt.duplicate_count_b,
         ))
-    return resolved_reactions
+    return reactions

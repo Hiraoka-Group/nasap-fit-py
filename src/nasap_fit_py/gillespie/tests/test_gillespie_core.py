@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
-from nasap_fit_py.models.reaction import Reaction
 from src.nasap_fit_py.gillespie.gillespie_core import (GillespieCore,
                                                        GillespieCoreResult,
                                                        Status)
+from src.nasap_fit_py.models.reaction import Reaction
 
 
 def test_init_unimolecular():

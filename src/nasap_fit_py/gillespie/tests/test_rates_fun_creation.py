@@ -1,12 +1,12 @@
 import numpy as np
 
-from nasap_fit_py.models.reaction import Reaction
 from src.nasap_fit_py.gillespie.rates_fun_creation import create_rates_fun
+from src.nasap_fit_py.models.reaction import Reaction
 
 
 def test_unimolecular_reaction():
     """Test creating conc_rates_fun for a unimolecular reversible reaction: A <-> B."""
-    resolved_reactions = [
+    reactions = [
         Reaction(
             reactant1="A",
             reactant2=None,
@@ -18,7 +18,7 @@ def test_unimolecular_reaction():
     ]
     species_ids = ["A", "B"]
     
-    rates_fun = create_rates_fun(resolved_reactions, species_ids)
+    rates_fun = create_rates_fun(reactions, species_ids)
     
     particle_counts = np.array([2, 3])
     rates = rates_fun(particle_counts)
@@ -32,7 +32,7 @@ def test_unimolecular_reaction():
 
 def test_bimolecular_reaction():
     """Test creating conc_rates_fun for a bimolecular reversible reaction: A + B <-> C + D."""
-    resolved_reactions = [
+    reactions = [
         Reaction(
             reactant1="A",
             reactant2="B",
@@ -44,7 +44,7 @@ def test_bimolecular_reaction():
     ]
     species_ids = ["A", "B", "C", "D"]
     
-    rates_fun = create_rates_fun(resolved_reactions, species_ids)
+    rates_fun = create_rates_fun(reactions, species_ids)
     
     particle_counts = np.array([2, 3, 1, 4])
     rates = rates_fun(particle_counts)
@@ -58,7 +58,7 @@ def test_bimolecular_reaction():
 
 def test_multiple_reactions():
     """Test creating rates_fun for multiple reversible reactions."""
-    resolved_reactions = [
+    reactions = [
         Reaction(
             reactant1="A",
             reactant2="B",
@@ -78,7 +78,7 @@ def test_multiple_reactions():
     ]
     species_ids = ["A", "B", "C", "D", "E"]
     
-    rates_fun = create_rates_fun(resolved_reactions, species_ids)
+    rates_fun = create_rates_fun(reactions, species_ids)
     
     particle_counts = np.array([2, 3, 1, 4, 5])
     rates = rates_fun(particle_counts)

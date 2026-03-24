@@ -36,7 +36,7 @@ class GillespieCore:
 
     Parameters
     ----------
-    reactions : Sequence[ResolvedReaction]
+    reactions : Sequence[Reaction]
         Reactions with rate constants. Each reaction contributes two event channels:
         the forward direction and the backward direction.
     species_ids : Sequence[str]
@@ -112,7 +112,7 @@ class GillespieCore:
 
         Parameters
         ----------
-        reactions : Sequence[ResolvedReaction]
+        reactions : Sequence[Reaction]
             Reactions to convert into particle-count deltas.
         species_ids : Sequence[str]
             Species IDs defining the order of the returned arrays.
@@ -164,12 +164,12 @@ class GillespieCore:
         species_id_set = set(species_ids)
         missing_species_ids: set[str] = set()
 
-        for reaction in reactions:
+        for r in reactions:
             reaction_species_ids = (
-                reaction.reactant1,
-                reaction.reactant2,
-                reaction.product1,
-                reaction.product2,
+                r.reactant1,
+                r.reactant2,
+                r.product1,
+                r.product2,
             )
             for species_id in reaction_species_ids:
                 if species_id is not None and species_id not in species_id_set:
