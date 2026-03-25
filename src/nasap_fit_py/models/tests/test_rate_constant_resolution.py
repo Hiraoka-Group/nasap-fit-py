@@ -1,16 +1,16 @@
-import numpy as np
-import numpy.typing as npt
 import pytest
 
-from nasap_fit_py.simulation.rate_constant_resolution import (
-    RateConstant, Reaction, ResolvedReaction, create_rates_fun,
-    resolve_rate_constants)
+from nasap_fit_py.models.rate_constant import RateConstant
+from nasap_fit_py.models.reaction import Reaction
+from nasap_fit_py.models.reaction_with_type import ReactionWithType
+from nasap_fit_py.models.reaction_with_type_to_reaction_converter import \
+    convert_reaction_with_type_to_reaction
 
 
 def test_single_reaction_basic():
     # A + B <-> C + D, with forward rate constant 0.5 and backward rate constant 0.1
-    reactions = [
-        Reaction(
+    reactions_with_type = [
+        ReactionWithType(
             reactant1="A",
             reactant2="B",
             product1="C",
@@ -24,10 +24,10 @@ def test_single_reaction_basic():
         "type1": RateConstant(forward=0.5, backward=0.1),
     }
 
-    result = resolve_rate_constants(reactions, rate_constants)
+    result = convert_reaction_with_type_to_reaction(reactions_with_type, rate_constants)
 
     assert result == [
-        ResolvedReaction(
+        Reaction(
         reactant1="A",
         reactant2="B",
         product1="C",
@@ -39,8 +39,8 @@ def test_single_reaction_basic():
 
 def test_single_reaction_with_none_values():
     # A <-> B, with forward rate constant 1.0 and backward rate constant 0.5
-    reactions = [
-        Reaction(
+    reactions_with_type = [
+        ReactionWithType(
             reactant1="A",
             reactant2=None,
             product1="B",
@@ -54,10 +54,10 @@ def test_single_reaction_with_none_values():
         "unimolecular": RateConstant(forward=1.0, backward=0.5),
     }
 
-    result = resolve_rate_constants(reactions, rate_constants)
+    result = convert_reaction_with_type_to_reaction(reactions_with_type, rate_constants)
 
     assert result == [
-        ResolvedReaction(
+        Reaction(
         reactant1="A",
         reactant2=None,
         product1="B",
@@ -69,8 +69,8 @@ def test_single_reaction_with_none_values():
 
 def test_duplicate_count_affects_rate_constants():
     # A + B <-> C + D, with forward rate constant 0.5 and backward rate constant 0.1, and duplicate counts of 3 and 2
-    reactions = [
-        Reaction(
+    reactions_with_type = [
+        ReactionWithType(
             reactant1="A",
             reactant2="B",
             product1="C",
@@ -84,10 +84,10 @@ def test_duplicate_count_affects_rate_constants():
         "type1": RateConstant(forward=0.5, backward=0.1),
     }
 
-    result = resolve_rate_constants(reactions, rate_constants)
+    result = convert_reaction_with_type_to_reaction(reactions_with_type, rate_constants)
 
     assert result == [
-        ResolvedReaction(
+        Reaction(
         reactant1="A",
         reactant2="B",
         product1="C",
@@ -100,8 +100,8 @@ def test_duplicate_count_affects_rate_constants():
 def test_multiple_reactions_different_types():
     # A + B <-> C + D (type1), with forward rate constant 0.5 and backward rate constant 0.1
     # B + C <-> D + E (type2), with forward rate constant 1.0 and backward rate constant 0.2
-    reactions = [
-        Reaction(
+    reactions_with_type = [
+        ReactionWithType(
             reactant1="A",
             reactant2="B",
             product1="C",
@@ -110,7 +110,7 @@ def test_multiple_reactions_different_types():
             duplicate_count_f=1,
             duplicate_count_b=1,
         ),
-        Reaction(
+        ReactionWithType(
             reactant1="B",
             reactant2="C",
             product1="D",
@@ -125,10 +125,10 @@ def test_multiple_reactions_different_types():
         "type2": RateConstant(forward=1.0, backward=0.2),
     }
 
-    result = resolve_rate_constants(reactions, rate_constants)
+    result = convert_reaction_with_type_to_reaction(reactions_with_type, rate_constants)
 
     assert result == [
-        ResolvedReaction(
+        Reaction(
         reactant1="A",
         reactant2="B",
         product1="C",
@@ -136,7 +136,7 @@ def test_multiple_reactions_different_types():
         rate_constant_f=0.5,
         rate_constant_b=0.1,
     ),
-        ResolvedReaction(
+        Reaction(
         reactant1="B",
         reactant2="C",
         product1="D",
@@ -148,8 +148,8 @@ def test_multiple_reactions_different_types():
 
 def test_undefined_reaction_type_raises_value_error():
     # Test that an undefined reaction type raises a ValueError with helpful message
-    reactions = [
-        Reaction(
+    reactions_with_type = [
+        ReactionWithType(
             reactant1="A",
             reactant2="B",
             product1="C",
@@ -165,7 +165,7 @@ def test_undefined_reaction_type_raises_value_error():
     }
 
     with pytest.raises(ValueError) as exc_info:
-        resolve_rate_constants(reactions, rate_constants)
+        convert_reaction_with_type_to_reaction(reactions_with_type, rate_constants)
 
     assert str(exc_info.value) == (
         "Reaction type 'undefined_type' is not defined in rate_constants. "
@@ -175,8 +175,8 @@ def test_undefined_reaction_type_raises_value_error():
 
 def test_undefined_reaction_type_unimolecular_empty_rate_constants():
     # Test that error message correctly shows unimolecular reactions
-    reactions = [
-        Reaction(
+    reactions_with_type = [
+        ReactionWithType(
             reactant1="A",
             reactant2=None,
             product1="B",
@@ -189,7 +189,7 @@ def test_undefined_reaction_type_unimolecular_empty_rate_constants():
     rate_constants: dict[str, RateConstant] = {}
 
     with pytest.raises(ValueError) as exc_info:
-        resolve_rate_constants(reactions, rate_constants)
+        convert_reaction_with_type_to_reaction(reactions_with_type, rate_constants)
 
     assert str(exc_info.value) == (
         "Reaction type 'unknown_uni' is not defined in rate_constants. "
@@ -199,8 +199,8 @@ def test_undefined_reaction_type_unimolecular_empty_rate_constants():
 
 def test_undefined_reaction_type_in_second_reaction():
     # Test that error message correctly identifies which reaction in a list has the undefined type
-    reactions = [
-        Reaction(
+    reactions_with_type = [
+        ReactionWithType(
             reactant1="A",
             reactant2="B",
             product1="C",
@@ -209,7 +209,7 @@ def test_undefined_reaction_type_in_second_reaction():
             duplicate_count_f=1,
             duplicate_count_b=1,
         ),
-        Reaction(
+        ReactionWithType(
             reactant1="E",
             reactant2="F",
             product1="G",
@@ -224,97 +224,10 @@ def test_undefined_reaction_type_in_second_reaction():
     }
 
     with pytest.raises(ValueError) as exc_info:
-        resolve_rate_constants(reactions, rate_constants)
+        convert_reaction_with_type_to_reaction(reactions_with_type, rate_constants)
 
     assert str(exc_info.value) == (
         "Reaction type 'undefined_type' is not defined in rate_constants. "
         "This is the corresponding reaction: E + F -> G + H. "
     )
-
-
-def test_unimolecular_reaction():
-    """Test creating conc_rates_fun for a unimolecular reversible reaction: A <-> B."""
-    resolved_reactions = [
-        ResolvedReaction(
-            reactant1="A",
-            reactant2=None,
-            product1="B",
-            product2=None,
-            rate_constant_f=0.5,
-            rate_constant_b=0.1,
-        )
-    ]
-    species_ids = ["A", "B"]
-    
-    rates_fun = create_rates_fun(resolved_reactions, species_ids)
-    
-    particle_counts = np.array([2, 3])
-    rates = rates_fun(particle_counts)
-    
-    # Expected: [forward_rate, backward_rate]
-    # forward: k_f * [A] = 0.5 * 2 = 1.0
-    # backward: k_b * [B] = 0.1 * 3 = 0.3
-    expected_rates = np.array([1.0, 0.3])
-    np.testing.assert_allclose(rates, expected_rates)
-    
-
-def test_bimolecular_reaction():
-    """Test creating conc_rates_fun for a bimolecular reversible reaction: A + B <-> C + D."""
-    resolved_reactions = [
-        ResolvedReaction(
-            reactant1="A",
-            reactant2="B",
-            product1="C",
-            product2="D",
-            rate_constant_f=0.5,
-            rate_constant_b=0.1,
-        )
-    ]
-    species_ids = ["A", "B", "C", "D"]
-    
-    rates_fun = create_rates_fun(resolved_reactions, species_ids)
-    
-    particle_counts = np.array([2, 3, 1, 4])
-    rates = rates_fun(particle_counts)
-    
-    # Expected: [forward_rate, backward_rate]
-    # forward: k_f * [A] * [B] = 0.5 * 2 * 3 = 3.0
-    # backward: k_b * [C] * [D] = 0.1 * 1 * 4 = 0.4
-    expected_rates = np.array([3.0, 0.4])
-    np.testing.assert_allclose(rates, expected_rates)
-
-
-def test_multiple_reactions():
-    """Test creating rates_fun for multiple reversible reactions."""
-    resolved_reactions = [
-        ResolvedReaction(
-            reactant1="A",
-            reactant2="B",
-            product1="C",
-            product2="D",
-            rate_constant_f=0.5,
-            rate_constant_b=0.1,
-        ),
-        ResolvedReaction(
-            reactant1="B",
-            reactant2="C",
-            product1="D",
-            product2="E",
-            rate_constant_f=1.0,
-            rate_constant_b=0.2,
-        ),
-    ]
-    species_ids = ["A", "B", "C", "D", "E"]
-    
-    rates_fun = create_rates_fun(resolved_reactions, species_ids)
-    
-    particle_counts = np.array([2, 3, 1, 4, 5])
-    rates = rates_fun(particle_counts)
-    
-    # Expected: 4 elements (2 reactions × 2 directions each)
-    # Reaction 0 forward: 0.5 * 2 * 3 = 3.0
-    # Reaction 0 backward: 0.1 * 1 * 4 = 0.4
-    # Reaction 1 forward: 1.0 * 3 * 1 = 3.0
-    # Reaction 1 backward: 0.2 * 4 * 5 = 4.0
-    expected_rates = np.array([3.0, 0.4, 3.0, 4.0])
-    np.testing.assert_allclose(rates, expected_rates)
+        

@@ -5,7 +5,9 @@ from enum import Enum, auto
 import numpy as np
 import numpy.typing as npt
 
-from .rate_constant_resolution import ResolvedReaction, create_rates_fun
+from src.nasap_fit_py.models import Reaction
+
+from .rates_fun_creation import create_rates_fun
 
 
 class Status(Enum):
@@ -34,13 +36,13 @@ class GillespieCore:
 
     Parameters
     ----------
-    reactions : Sequence[ResolvedReaction]
-        Reactions with rate constants. Each reaction contributes two event channels: 
+    reactions : Sequence[Reaction]
+        Reactions with rate constants. Each reaction contributes two event channels:
         the forward direction and the backward direction.
     species_ids : Sequence[str]
         Species IDs defining the order of particle-count vectors.
     init_particle_counts : Mapping[str, int]
-        Initial particle count for some species. Species not listed here will be 
+        Initial particle count for some species. Species not listed here will be
         initialized with 0 particles.
         Units are particle counts, not molar amounts and not concentration.
     t_max : float | None, optional
@@ -56,12 +58,12 @@ class GillespieCore:
     Raises
     ------
     ValueError
-        If both t_max and max_iter are None, or if reactions reference species IDs 
+        If both t_max and max_iter are None, or if reactions reference species IDs
         not present in species_ids.
     """
     def __init__(
             self,
-            reactions: Sequence[ResolvedReaction],
+            reactions: Sequence[Reaction],
             species_ids: Sequence[str],
             init_particle_counts: Mapping[str, int],
             *,
@@ -77,9 +79,9 @@ class GillespieCore:
         self.species_ids = species_ids
 
         self.rates_fun = create_rates_fun(reactions, species_ids)
-        
+
         self.particle_changes = self._create_particle_changes(reactions, species_ids)
-        
+
         self.t_max = t_max
         self.max_iter = max_iter
 
@@ -97,20 +99,20 @@ class GillespieCore:
 
     @staticmethod
     def _create_particle_changes(
-        reactions: Sequence[ResolvedReaction],
+        reactions: Sequence[Reaction],
         species_ids: Sequence[str],
     ) -> npt.NDArray[np.int_]:
         """Create particle-count deltas for each forward and backward reaction.
 
         Each returned array has the same length and ordering as species_ids.
         A negative value means particles are consumed, while a positive value
-        means particles are produced. Given a system of n reversible reactions, 
-        the returned sequence has length 2n, where the forward change 
+        means particles are produced. Given a system of n reversible reactions,
+        the returned sequence has length 2n, where the forward change
         for each reaction is immediately followed by the corresponding backward change.
 
         Parameters
         ----------
-        reactions : Sequence[ResolvedReaction]
+        reactions : Sequence[Reaction]
             Reactions to convert into particle-count deltas.
         species_ids : Sequence[str]
             Species IDs defining the order of the returned arrays.
@@ -125,31 +127,31 @@ class GillespieCore:
         """
         particle_changes = []
         species_to_index = {sp_id: i for i, sp_id in enumerate(species_ids)}
-        
+
         for r in reactions:
             # Forward reaction: reactants -> products
             forward_change = np.zeros(len(species_ids), dtype=np.int_)
-            
+
             # Decrease reactants
             forward_change[species_to_index[r.reactant1]] -= 1
             if r.reactant2 is not None:
                 forward_change[species_to_index[r.reactant2]] -= 1
-            
+
             # Increase products
             forward_change[species_to_index[r.product1]] += 1
             if r.product2 is not None:
                 forward_change[species_to_index[r.product2]] += 1
-            
+
             # Backward reaction: products -> reactants
             backward_change = -forward_change
-            
+
             particle_changes.extend([forward_change, backward_change])
-        
+
         return np.array(particle_changes, dtype=np.int_)
 
     @staticmethod
     def _validate_reaction_species_ids(
-        reactions: Sequence[ResolvedReaction],
+        reactions: Sequence[Reaction],
         species_ids: Sequence[str],
     ) -> None:
         """Validate that all species used in reactions are listed in species_ids.
@@ -162,12 +164,12 @@ class GillespieCore:
         species_id_set = set(species_ids)
         missing_species_ids: set[str] = set()
 
-        for reaction in reactions:
+        for r in reactions:
             reaction_species_ids = (
-                reaction.reactant1,
-                reaction.reactant2,
-                reaction.product1,
-                reaction.product2,
+                r.reactant1,
+                r.reactant2,
+                r.product1,
+                r.product2,
             )
             for species_id in reaction_species_ids:
                 if species_id is not None and species_id not in species_id_set:
@@ -191,13 +193,13 @@ class GillespieCore:
         npt.NDArray[np.float64]
             One-dimensional array of nonnegative rates for all event channels
             at the current simulation state.
-            For each reaction, the forward rate appears first and the backward rate 
-            appears immediately after it. If you use, for example, minute as the time unit, 
+            For each reaction, the forward rate appears first and the backward rate
+            appears immediately after it. If you use, for example, minute as the time unit,
             the rates should be in [min^-1].
         """
         cur_particle_counts = self.particle_counts_seq[-1]
         return self.rates_fun(cur_particle_counts)
- 
+
     @property
     def total_rate(self) -> float:
         """Return the sum of all current reaction rates.
@@ -206,7 +208,7 @@ class GillespieCore:
         time distribution used by the Gillespie algorithm.
         """
         return sum(self.rates)
-    
+
     def solve(self) -> GillespieCoreResult:
         """Run the simulation until a termination condition is reached.
 
@@ -228,7 +230,7 @@ class GillespieCore:
                     self.reaction_counts.copy(),
                     e.status,
                 )
-    
+
     def _step(self) -> None:
         """Advance the simulation by one reaction event.
 
@@ -247,13 +249,13 @@ class GillespieCore:
         """
         cur_t = self.t_seq[-1]
 
-        if (self.max_iter is not None 
+        if (self.max_iter is not None
                 and len(self.t_seq) - 1 >= self.max_iter):
             raise AbortGillespieCoreError(Status.REACHED_MAX_ITER)
 
         rates = self.rates
         total_rate = self.total_rate
-        
+
         if total_rate == 0:
             raise AbortGillespieCoreError(Status.TOTAL_RATE_ZERO)
         reaction_index = self.determine_reaction(rates, total_rate)
@@ -261,7 +263,7 @@ class GillespieCore:
 
         if self.t_max is not None and cur_t + time_step > self.t_max:
             raise AbortGillespieCoreError(Status.REACHED_T_MAX)
-        
+
         self.perform_reaction(reaction_index)
         self.t_seq = np.append(self.t_seq, cur_t + time_step)
 
@@ -306,8 +308,8 @@ class GillespieCore:
     def perform_reaction(self, reaction_index: int) -> None:
         """Apply a sampled reaction and record the updated state.
 
-        The method updates the particle counts according to the sampled reaction 
-        and reaction counts will be updated accordingly. 
+        The method updates the particle counts according to the sampled reaction
+        and reaction counts will be updated accordingly.
         If the sampled particle change would produce a negative count for some
         species, the resulting count is clipped to 0.
 
@@ -319,7 +321,7 @@ class GillespieCore:
         cur_particle_counts = self.particle_counts_seq[-1]
         new_particle_counts = (
             cur_particle_counts + self.particle_changes[reaction_index])
-        
+
         # Replace negative particle counts with 0
         new_particle_counts[new_particle_counts < 0] = 0
 

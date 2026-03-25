@@ -2,16 +2,15 @@ import numpy as np
 import pytest
 from scipy.constants import Avogadro
 
-from src.nasap_fit_py.simulation.gillespie import Gillespie, GillespieResult
-from src.nasap_fit_py.simulation.gillespie_core import Status
-from src.nasap_fit_py.simulation.rate_constant_resolution import \
-    ResolvedReaction
+from src.nasap_fit_py.gillespie.gillespie import Gillespie, GillespieResult
+from src.nasap_fit_py.gillespie.gillespie_core import Status
+from src.nasap_fit_py.models import Reaction
 
 
 def test_init():
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
-        ResolvedReaction('B', None, 'C', None, rate_constant_f=1.0, rate_constant_b=0.5),
+        Reaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
+        Reaction('B', None, 'C', None, rate_constant_f=1.0, rate_constant_b=0.5),
     ]
     species_ids = ['A', 'B', 'C']
     init_concentrations = {'A': 2.0, 'B': 1.0, 'C': 0.5}
@@ -33,7 +32,7 @@ def test_init():
 
 def test_solve():
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
+        Reaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
     ]
     species_ids = ['A', 'B']
     init_concentrations = {'A': 2.0, 'B': 1.0}
@@ -55,7 +54,7 @@ def test_solve():
 
 def test_internal_particle_counts_are_used_in_simulation():
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.0),
+        Reaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.0),
     ]
     species_ids = ['A', 'B']
     volume = 1e-15
@@ -97,7 +96,7 @@ def test_internal_particle_counts_are_used_in_simulation():
 
 def test_init_no_volume():
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
+        Reaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
     ]
     species_ids = ['A', 'B']
     init_concentrations = {'A': 2.0, 'B': 1.0}
@@ -117,7 +116,7 @@ def test_init_no_volume():
 
 def test_init_volume_non_positive():
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
+        Reaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
     ]
     species_ids = ['A', 'B']
     init_concentrations = {'A': 2.0, 'B': 1.0}
@@ -136,7 +135,7 @@ def test_init_volume_non_positive():
 
 def test_init_concentration_negative():
     reactions = [
-        ResolvedReaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
+        Reaction('A', None, 'B', None, rate_constant_f=1.0, rate_constant_b=0.5),
     ]
     species_ids = ['A', 'B']
     init_concentrations = {'A': -1.0, 'B': 1.0}
