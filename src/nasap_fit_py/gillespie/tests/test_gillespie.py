@@ -49,6 +49,7 @@ def test_solve():
     assert isinstance(result, GillespieResult)
     assert len(result.concentrations_seq) == len(result.t_seq)
     assert result.concentrations_seq.shape[1] == len(species_ids)
+    assert len(result.extent_of_reaction) == len(reactions)
     assert (result.concentrations_seq >= 0.0).all()
 
 
@@ -74,6 +75,10 @@ def test_internal_particle_counts_are_used_in_simulation():
     result = gillespie.solve()
 
     assert result.status == Status.REACHED_MAX_ITER
+    np.testing.assert_allclose(
+        result.extent_of_reaction,
+        np.array([2.0 / Avogadro], dtype=np.float64),
+    )
     # White-box assertions: verify simulation state transitions in the internal core.
     assert np.issubdtype(gillespie._core.particle_counts_seq.dtype, np.integer)
     np.testing.assert_array_equal(
