@@ -49,7 +49,8 @@ def test_solve():
     assert isinstance(result, GillespieResult)
     assert len(result.concentrations_seq) == len(result.t_seq)
     assert result.concentrations_seq.shape[1] == len(species_ids)
-    assert len(result.extent_of_reaction) == len(reactions)
+    assert result.extent_of_reaction.shape[0] == len(reactions)
+    assert result.extent_of_reaction.shape[1] == 2
     assert (result.concentrations_seq >= 0.0).all()
 
 
