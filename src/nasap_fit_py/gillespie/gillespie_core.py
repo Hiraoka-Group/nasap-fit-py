@@ -22,7 +22,7 @@ class Status(Enum):
 class GillespieCoreResult:
     t_seq: npt.NDArray[np.float64]
     particle_counts_seq: npt.NDArray[np.int_]
-    reaction_counts: npt.NDArray[np.int_]
+    reaction_counts: npt.NDArray[np.int_] # shape (num_reactions, 2) with forward and backward counts
     status: Status
 
 
