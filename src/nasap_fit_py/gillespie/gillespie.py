@@ -69,8 +69,7 @@ class Gillespie:
             reaction_counts: npt.NDArray[np.int_],
             ) -> npt.NDArray[np.float64]:
         """Build per-reaction extent [mol] from forward/backward reaction counts."""
-        net_reaction_counts = reaction_counts[0::2] - reaction_counts[1::2]
-        return net_reaction_counts.astype(np.float64) / Avogadro
+        return reaction_counts.astype(np.float64) / Avogadro
 
     @staticmethod
     def _build_init_particle_counts(
