@@ -22,7 +22,7 @@ class Status(Enum):
 class GillespieCoreResult:
     t_seq: npt.NDArray[np.float64]
     particle_counts_seq: npt.NDArray[np.int_]
-    reaction_counts: npt.NDArray[np.int_]
+    reaction_counts: npt.NDArray[np.int_] # shape (num_reactions, 2) with forward and backward counts
     status: Status
 
 
@@ -95,7 +95,7 @@ class GillespieCore:
         )
         self.particle_counts_seq = init_counts_array.reshape(1, -1)
 
-        self.reaction_counts = np.zeros(2*len(reactions), dtype=np.int_)
+        self.reaction_counts = np.zeros((len(reactions), 2), dtype=np.int_)
 
     @staticmethod
     def _create_particle_changes(
@@ -328,4 +328,6 @@ class GillespieCore:
         self.particle_counts_seq = np.vstack(
             (self.particle_counts_seq, new_particle_counts))
 
-        self.reaction_counts[reaction_index] += 1
+        reaction_row = reaction_index // 2
+        direction_col = reaction_index % 2  # 0: forward, 1: backward
+        self.reaction_counts[reaction_row, direction_col] += 1

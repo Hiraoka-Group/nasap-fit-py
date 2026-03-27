@@ -14,7 +14,7 @@ from .gillespie_core import GillespieCore, GillespieCoreResult, Status
 class GillespieResult:
     t_seq: npt.NDArray[np.float64]
     concentrations_seq: npt.NDArray[np.float64]
-    reaction_counts: npt.NDArray[np.int_]
+    extent_of_reaction: npt.NDArray[np.float64] # shape (num_reactions, 2) with forward and backward extents
     status: Status
 
 
@@ -65,6 +65,13 @@ class Gillespie:
         )
 
     @staticmethod
+    def _build_extent_of_reaction(
+            reaction_counts: npt.NDArray[np.int_],
+            ) -> npt.NDArray[np.float64]:
+        """Build reaction extent [mol] of each forward/backward reaction from reaction counts."""
+        return reaction_counts.astype(np.float64) / Avogadro
+
+    @staticmethod
     def _build_init_particle_counts(
             init_concentrations: Mapping[str, float],
             volume: float,
@@ -100,6 +107,7 @@ class Gillespie:
     def solve(self) -> GillespieResult:
         """Run the simulation and return concentration trajectories."""
         core_result: GillespieCoreResult = self._core.solve()
+        extent_of_reaction = self._build_extent_of_reaction(core_result.reaction_counts)
 
         concentrations_seq = (
             core_result.particle_counts_seq.astype(np.float64) / (self.volume * Avogadro)
@@ -108,6 +116,6 @@ class Gillespie:
         return GillespieResult(
             core_result.t_seq,
             concentrations_seq,
-            core_result.reaction_counts,
+            extent_of_reaction,
             core_result.status,
         )
