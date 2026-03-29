@@ -273,14 +273,10 @@ class GillespieCore:
             One-dimensional rate array for all event channels at the current
             simulation state, after masking out non-workable channels.
         """
-<<<<<<< HEAD
         cur_particle_counts = self._particle_counts_buffer[self._particle_counts_len - 1]
-        return self.rates_fun(cur_particle_counts)
-=======
-        cur_particle_counts = self.particle_counts_seq[-1]
         rates = self.rates_fun(cur_particle_counts)
+
         return self._create_workable_rates(rates, cur_particle_counts)
->>>>>>> negative-particle-counts-reaction-does-not-occur
 
     @property
     def workable_total_rate(self) -> float:
