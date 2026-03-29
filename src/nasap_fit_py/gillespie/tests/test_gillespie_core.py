@@ -253,6 +253,28 @@ def test_perform_reaction_increments_and_accumulates():
     np.testing.assert_array_equal(gillespie_core.reaction_counts, [[3, 1]])
 
 
+def test_perform_reaction_raises_when_particle_count_would_be_negative():
+    reactions = [
+        Reaction('A', 'A', 'B', None, rate_constant_f=1.0, rate_constant_b=0.0),
+
+    ]
+    species_ids = ['A', 'B']
+    init_particle_counts = {'A': 1, 'B': 0}
+
+    gillespie_core = GillespieCore(
+        reactions,
+        species_ids,
+        init_particle_counts,
+        t_max=10.0,
+        max_iter=10,
+    )
+    with pytest.raises(ValueError) as exc_info:
+        gillespie_core.perform_reaction(0)
+    assert str(exc_info.value) == (
+        'Reaction index 0 would produce negative particle counts.'
+    )
+
+
 def test_with_example_reaction():
     # Reaction:
     # dA/dt = -k * A
