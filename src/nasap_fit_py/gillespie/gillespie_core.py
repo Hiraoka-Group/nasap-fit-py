@@ -87,15 +87,67 @@ class GillespieCore:
 
         self.rng = np.random.default_rng(seed)
 
-        self.t_seq = np.array([0.0], dtype=np.float64)
-
         init_counts_array = np.array(
             [init_particle_counts.get(sp_id, 0) for sp_id in species_ids],
             dtype=np.int_
         )
-        self.particle_counts_seq = init_counts_array.reshape(1, -1)
+
+        initial_capacity = max_iter + 1 if max_iter is not None else 1024
+        if initial_capacity < 1:
+            initial_capacity = 1
+
+        self._t_buffer = np.empty(initial_capacity, dtype=np.float64)
+        self._t_buffer[0] = 0.0
+        self._t_len = 1
+
+        self._particle_counts_buffer = np.empty(
+            (initial_capacity, len(species_ids)),
+            dtype=np.int_,
+        )
+        self._particle_counts_buffer[0] = init_counts_array
+        self._particle_counts_len = 1
+
+        self.t_seq = self._t_buffer[:self._t_len]
+        self.particle_counts_seq = self._particle_counts_buffer[:self._particle_counts_len]
 
         self.reaction_counts = np.zeros((len(reactions), 2), dtype=np.int_)
+
+    def _ensure_t_capacity(self, required_len: int) -> None:
+        if required_len <= self._t_buffer.shape[0]:
+            return
+
+        new_capacity = max(required_len, self._t_buffer.shape[0] * 2)
+        new_t_buffer = np.empty(new_capacity, dtype=np.float64)
+        new_t_buffer[:self._t_len] = self._t_buffer[:self._t_len]
+        self._t_buffer = new_t_buffer
+
+    def _ensure_particle_counts_capacity(self, required_len: int) -> None:
+        if required_len <= self._particle_counts_buffer.shape[0]:
+            return
+
+        new_capacity = max(required_len, self._particle_counts_buffer.shape[0] * 2)
+        new_particle_counts_buffer = np.empty(
+            (new_capacity, self._particle_counts_buffer.shape[1]),
+            dtype=np.int_,
+        )
+        new_particle_counts_buffer[:self._particle_counts_len] = (
+            self._particle_counts_buffer[:self._particle_counts_len]
+        )
+        self._particle_counts_buffer = new_particle_counts_buffer
+
+    def _append_t(self, t: float) -> None:
+        next_len = self._t_len + 1
+        self._ensure_t_capacity(next_len)
+        self._t_buffer[self._t_len] = t
+        self._t_len = next_len
+        self.t_seq = self._t_buffer[:self._t_len]
+
+    def _append_particle_counts(self, particle_counts: npt.NDArray[np.int_]) -> None:
+        next_len = self._particle_counts_len + 1
+        self._ensure_particle_counts_capacity(next_len)
+        self._particle_counts_buffer[self._particle_counts_len] = particle_counts
+        self._particle_counts_len = next_len
+        self.particle_counts_seq = self._particle_counts_buffer[:self._particle_counts_len]
 
     @staticmethod
     def _create_particle_changes(
@@ -197,7 +249,7 @@ class GillespieCore:
             appears immediately after it. If you use, for example, minute as the time unit,
             the rates should be in [min^-1].
         """
-        cur_particle_counts = self.particle_counts_seq[-1]
+        cur_particle_counts = self._particle_counts_buffer[self._particle_counts_len - 1]
         return self.rates_fun(cur_particle_counts)
 
     @property
@@ -247,10 +299,10 @@ class GillespieCore:
         AbortGillespieCoreError
             If a termination condition is reached before executing the next event.
         """
-        cur_t = self.t_seq[-1]
+        cur_t = self._t_buffer[self._t_len - 1]
 
         if (self.max_iter is not None
-                and len(self.t_seq) - 1 >= self.max_iter):
+            and self._t_len - 1 >= self.max_iter):
             raise AbortGillespieCoreError(Status.REACHED_MAX_ITER)
 
         rates = self.rates
@@ -265,7 +317,7 @@ class GillespieCore:
             raise AbortGillespieCoreError(Status.REACHED_T_MAX)
 
         self.perform_reaction(reaction_index)
-        self.t_seq = np.append(self.t_seq, cur_t + time_step)
+        self._append_t(cur_t + time_step)
 
     def determine_reaction(
         self,
@@ -318,15 +370,14 @@ class GillespieCore:
         reaction_index : int
             Index of the forward or backward reaction to apply.
         """
-        cur_particle_counts = self.particle_counts_seq[-1]
+        cur_particle_counts = self._particle_counts_buffer[self._particle_counts_len - 1]
         new_particle_counts = (
             cur_particle_counts + self.particle_changes[reaction_index])
 
         # Replace negative particle counts with 0
         new_particle_counts[new_particle_counts < 0] = 0
 
-        self.particle_counts_seq = np.vstack(
-            (self.particle_counts_seq, new_particle_counts))
+        self._append_particle_counts(new_particle_counts)
 
         reaction_row = reaction_index // 2
         direction_col = reaction_index % 2  # 0: forward, 1: backward
