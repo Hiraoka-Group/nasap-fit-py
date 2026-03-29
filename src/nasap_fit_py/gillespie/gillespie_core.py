@@ -182,32 +182,26 @@ class GillespieCore:
             )
 
     @property
-    def rates(self) -> npt.NDArray[np.float64]:
-        """Return reaction rates computed from the current particle counts.
+    def workable_rates(self) -> npt.NDArray[np.float64]:
+        """Return rates that are executable at the current particle state.
 
-        Rates are re-evaluated on every access using the latest state,
-        self.particle_counts_seq[-1].
+        This applies non-negativity constraints to the raw rates by setting to
+        zero any reaction channel that would produce negative particle counts.
 
         Returns
         -------
         npt.NDArray[np.float64]
-            One-dimensional array of nonnegative rates for all event channels
-            at the current simulation state.
-            For each reaction, the forward rate appears first and the backward rate
-            appears immediately after it. If you use, for example, minute as the time unit,
-            the rates should be in [min^-1].
+            One-dimensional rate array for all event channels at the current
+            simulation state, after masking out non-workable channels.
         """
         cur_particle_counts = self.particle_counts_seq[-1]
-        return self.rates_fun(cur_particle_counts)
+        rates = self.rates_fun(cur_particle_counts)
+        return self._create_workable_rates(rates, cur_particle_counts)
 
     @property
-    def total_rate(self) -> float:
-        """Return the sum of all current reaction rates.
-
-        The total rate is the intensity parameter of the exponential waiting
-        time distribution used by the Gillespie algorithm.
-        """
-        return sum(self.rates)
+    def workable_total_rate(self) -> float:
+        """Return the sum of currently workable reaction rates."""
+        return float(np.sum(self.workable_rates))
 
     def solve(self) -> GillespieCoreResult:
         """Run the simulation until a termination condition is reached.
@@ -253,15 +247,13 @@ class GillespieCore:
                 and len(self.t_seq) - 1 >= self.max_iter):
             raise AbortGillespieCoreError(Status.REACHED_MAX_ITER)
 
-        cur_particle_counts = self.particle_counts_seq[-1]
-        rates = self.rates
-        workable_rates = self._create_workable_rates(rates, cur_particle_counts)
-        total_rate = float(np.sum(workable_rates))
+        workable_rates = self.workable_rates
+        workable_total_rate = self.workable_total_rate
 
-        if total_rate == 0:
+        if workable_total_rate == 0:
             raise AbortGillespieCoreError(Status.TOTAL_RATE_ZERO)
-        reaction_index = self.determine_reaction(workable_rates, total_rate)
-        time_step = self.determine_time_step(total_rate)
+        reaction_index = self.determine_reaction(workable_rates, workable_total_rate)
+        time_step = self.determine_time_step(workable_total_rate)
 
         if self.t_max is not None and cur_t + time_step > self.t_max:
             raise AbortGillespieCoreError(Status.REACHED_T_MAX)
@@ -330,6 +322,11 @@ class GillespieCore:
         ----------
         reaction_index : int
             Index of the forward or backward reaction to apply.
+
+        Raises
+        ------
+        ValueError
+            If applying the reaction would produce negative particle counts.
         """
         cur_particle_counts = self.particle_counts_seq[-1]
         new_particle_counts = (
