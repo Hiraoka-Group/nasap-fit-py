@@ -71,9 +71,7 @@ class GillespieCore:
             max_iter: int | None = 1_000_000,
             seed: int | None = None,
             ) -> None:
-        if t_max is None and max_iter is None:
-            raise ValueError('Either t_max or max_iter must be specified.')
-        self._validate_reaction_species_ids(reactions, species_ids)
+        self._validate_init_args(reactions, species_ids, t_max, max_iter)
 
         self.reactions = reactions
         self.species_ids = species_ids
@@ -87,30 +85,59 @@ class GillespieCore:
 
         self.rng = np.random.default_rng(seed)
 
-        init_counts_array = np.array(
-            [init_particle_counts.get(sp_id, 0) for sp_id in species_ids],
-            dtype=np.int_
-        )
-
-        initial_capacity = max_iter + 1 if max_iter is not None else 1024
-        if initial_capacity < 1:
-            initial_capacity = 1
-
-        self._t_buffer = np.empty(initial_capacity, dtype=np.float64)
-        self._t_buffer[0] = 0.0
-        self._t_len = 1
-
-        self._particle_counts_buffer = np.empty(
-            (initial_capacity, len(species_ids)),
-            dtype=np.int_,
-        )
-        self._particle_counts_buffer[0] = init_counts_array
-        self._particle_counts_len = 1
+        init_counts_array = self._create_init_counts_array(init_particle_counts, species_ids)
+        initial_capacity = self._resolve_initial_capacity(max_iter)
+        self._initialize_buffers(initial_capacity, len(species_ids), init_counts_array)
 
         self.t_seq = self._t_buffer[:self._t_len]
         self.particle_counts_seq = self._particle_counts_buffer[:self._particle_counts_len]
 
         self.reaction_counts = np.zeros((len(reactions), 2), dtype=np.int_)
+
+    @staticmethod
+    def _validate_init_args(
+        reactions: Sequence[Reaction],
+        species_ids: Sequence[str],
+        t_max: float | None,
+        max_iter: int | None,
+    ) -> None:
+        if t_max is None and max_iter is None:
+            raise ValueError('Either t_max or max_iter must be specified.')
+        GillespieCore._validate_reaction_species_ids(reactions, species_ids)
+
+    @staticmethod
+    def _create_init_counts_array(
+        init_particle_counts: Mapping[str, int],
+        species_ids: Sequence[str],
+    ) -> npt.NDArray[np.int_]:
+        return np.array(
+            [init_particle_counts.get(sp_id, 0) for sp_id in species_ids],
+            dtype=np.int_,
+        )
+
+    @staticmethod
+    def _resolve_initial_capacity(max_iter: int | None) -> int:
+        initial_capacity = max_iter + 1 if max_iter is not None else 1024
+        if initial_capacity < 1:
+            return 1
+        return initial_capacity
+
+    def _initialize_buffers(
+        self,
+        initial_capacity: int,
+        num_species: int,
+        init_counts_array: npt.NDArray[np.int_],
+    ) -> None:
+        self._t_buffer = np.empty(initial_capacity, dtype=np.float64)
+        self._t_buffer[0] = 0.0
+        self._t_len = 1
+
+        self._particle_counts_buffer = np.empty(
+            (initial_capacity, num_species),
+            dtype=np.int_,
+        )
+        self._particle_counts_buffer[0] = init_counts_array
+        self._particle_counts_len = 1
 
     def _ensure_t_capacity(self, required_len: int) -> None:
         if required_len <= self._t_buffer.shape[0]:
