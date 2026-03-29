@@ -253,12 +253,14 @@ class GillespieCore:
                 and len(self.t_seq) - 1 >= self.max_iter):
             raise AbortGillespieCoreError(Status.REACHED_MAX_ITER)
 
+        cur_particle_counts = self.particle_counts_seq[-1]
         rates = self.rates
-        total_rate = self.total_rate
+        workable_rates = self._create_workable_rates(rates, cur_particle_counts)
+        total_rate = float(np.sum(workable_rates))
 
         if total_rate == 0:
             raise AbortGillespieCoreError(Status.TOTAL_RATE_ZERO)
-        reaction_index = self.determine_reaction(rates, total_rate)
+        reaction_index = self.determine_reaction(workable_rates, total_rate)
         time_step = self.determine_time_step(total_rate)
 
         if self.t_max is not None and cur_t + time_step > self.t_max:
@@ -266,6 +268,19 @@ class GillespieCore:
 
         self.perform_reaction(reaction_index)
         self.t_seq = np.append(self.t_seq, cur_t + time_step)
+
+    def _create_workable_rates(
+        self,
+        rates: npt.NDArray[np.float64],
+        cur_particle_counts: npt.NDArray[np.int_],
+    ) -> npt.NDArray[np.float64]:
+        """Zero-out rates for reactions that would make particle counts negative."""
+        next_counts = cur_particle_counts + self.particle_changes
+        workable_mask = np.all(next_counts >= 0, axis=1)
+
+        workable_rates = rates.copy()
+        workable_rates[~workable_mask] = 0.0
+        return workable_rates
 
     def determine_reaction(
         self,
@@ -310,8 +325,6 @@ class GillespieCore:
 
         The method updates the particle counts according to the sampled reaction
         and reaction counts will be updated accordingly.
-        If the sampled particle change would produce a negative count for some
-        species, the resulting count is clipped to 0.
 
         Parameters
         ----------
@@ -321,9 +334,10 @@ class GillespieCore:
         cur_particle_counts = self.particle_counts_seq[-1]
         new_particle_counts = (
             cur_particle_counts + self.particle_changes[reaction_index])
-
-        # Replace negative particle counts with 0
-        new_particle_counts[new_particle_counts < 0] = 0
+        if np.any(new_particle_counts < 0):
+            raise ValueError(
+                f'Reaction index {reaction_index} would produce negative particle counts.'
+            )
 
         self.particle_counts_seq = np.vstack(
             (self.particle_counts_seq, new_particle_counts))
