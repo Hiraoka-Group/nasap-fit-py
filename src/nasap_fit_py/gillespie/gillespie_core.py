@@ -333,7 +333,7 @@ class GillespieCore:
             raise AbortGillespieCoreError(Status.REACHED_MAX_ITER)
 
         rates = self.rates
-        total_rate = self.total_rate
+        total_rate = float(rates.sum())
 
         if total_rate == 0:
             raise AbortGillespieCoreError(Status.TOTAL_RATE_ZERO)
